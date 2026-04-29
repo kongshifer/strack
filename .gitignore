@@ -1,4 +1,5 @@
 build/
+__pycache__/
 *.stracki
 *.out
 *_results.py

@@ -1,0 +1,292 @@
+<input>
+  <geometry>
+    <surface id="x0" type="x-plane" coeffs="-4.41000000" boundary="reflect" />
+    <surface id="x1" type="x-plane" coeffs="-3.15000000" />
+    <surface id="x2" type="x-plane" coeffs="-1.89000000" />
+    <surface id="x3" type="x-plane" coeffs="-0.63000000" />
+    <surface id="x4" type="x-plane" coeffs="0.63000000" />
+    <surface id="x5" type="x-plane" coeffs="1.89000000" />
+    <surface id="x6" type="x-plane" coeffs="3.15000000" />
+    <surface id="x7" type="x-plane" coeffs="4.41000000" boundary="reflect" />
+    <surface id="y0" type="y-plane" coeffs="-4.41000000" boundary="reflect" />
+    <surface id="y1" type="y-plane" coeffs="-3.15000000" />
+    <surface id="y2" type="y-plane" coeffs="-1.89000000" />
+    <surface id="y3" type="y-plane" coeffs="-0.63000000" />
+    <surface id="y4" type="y-plane" coeffs="0.63000000" />
+    <surface id="y5" type="y-plane" coeffs="1.89000000" />
+    <surface id="y6" type="y-plane" coeffs="3.15000000" />
+    <surface id="y7" type="y-plane" coeffs="4.41000000" boundary="reflect" />
+    <surface id="zmin" type="z-plane" coeffs="-50.00000000" boundary="reflect" />
+    <surface id="zmax" type="z-plane" coeffs="50.00000000" boundary="reflect" />
+    <surface id="r1_0_6" type="z-cylinder" coeffs="-3.78000000 3.78000000 0.41000000" />
+    <surface id="r2_0_6" type="z-cylinder" coeffs="-3.78000000 3.78000000 0.47500000" />
+    <surface id="r1_1_6" type="z-cylinder" coeffs="-2.52000000 3.78000000 0.41000000" />
+    <surface id="r2_1_6" type="z-cylinder" coeffs="-2.52000000 3.78000000 0.47500000" />
+    <surface id="r1_2_6" type="z-cylinder" coeffs="-1.26000000 3.78000000 0.41000000" />
+    <surface id="r2_2_6" type="z-cylinder" coeffs="-1.26000000 3.78000000 0.47500000" />
+    <surface id="r1_3_6" type="z-cylinder" coeffs="0.00000000 3.78000000 0.41000000" />
+    <surface id="r2_3_6" type="z-cylinder" coeffs="0.00000000 3.78000000 0.47500000" />
+    <surface id="r1_4_6" type="z-cylinder" coeffs="1.26000000 3.78000000 0.41000000" />
+    <surface id="r2_4_6" type="z-cylinder" coeffs="1.26000000 3.78000000 0.47500000" />
+    <surface id="r1_5_6" type="z-cylinder" coeffs="2.52000000 3.78000000 0.41000000" />
+    <surface id="r2_5_6" type="z-cylinder" coeffs="2.52000000 3.78000000 0.47500000" />
+    <surface id="r1_6_6" type="z-cylinder" coeffs="3.78000000 3.78000000 0.41000000" />
+    <surface id="r2_6_6" type="z-cylinder" coeffs="3.78000000 3.78000000 0.47500000" />
+    <surface id="r1_0_5" type="z-cylinder" coeffs="-3.78000000 2.52000000 0.41000000" />
+    <surface id="r2_0_5" type="z-cylinder" coeffs="-3.78000000 2.52000000 0.47500000" />
+    <surface id="r1_1_5" type="z-cylinder" coeffs="-2.52000000 2.52000000 0.41000000" />
+    <surface id="r2_1_5" type="z-cylinder" coeffs="-2.52000000 2.52000000 0.47500000" />
+    <surface id="r1_2_5" type="z-cylinder" coeffs="-1.26000000 2.52000000 0.41000000" />
+    <surface id="r2_2_5" type="z-cylinder" coeffs="-1.26000000 2.52000000 0.47500000" />
+    <surface id="r1_3_5" type="z-cylinder" coeffs="0.00000000 2.52000000 0.41000000" />
+    <surface id="r2_3_5" type="z-cylinder" coeffs="0.00000000 2.52000000 0.47500000" />
+    <surface id="r1_4_5" type="z-cylinder" coeffs="1.26000000 2.52000000 0.41000000" />
+    <surface id="r2_4_5" type="z-cylinder" coeffs="1.26000000 2.52000000 0.47500000" />
+    <surface id="r1_5_5" type="z-cylinder" coeffs="2.52000000 2.52000000 0.41000000" />
+    <surface id="r2_5_5" type="z-cylinder" coeffs="2.52000000 2.52000000 0.47500000" />
+    <surface id="r1_6_5" type="z-cylinder" coeffs="3.78000000 2.52000000 0.41000000" />
+    <surface id="r2_6_5" type="z-cylinder" coeffs="3.78000000 2.52000000 0.47500000" />
+    <surface id="r1_0_4" type="z-cylinder" coeffs="-3.78000000 1.26000000 0.41000000" />
+    <surface id="r2_0_4" type="z-cylinder" coeffs="-3.78000000 1.26000000 0.47500000" />
+    <surface id="r1_1_4" type="z-cylinder" coeffs="-2.52000000 1.26000000 0.41000000" />
+    <surface id="r2_1_4" type="z-cylinder" coeffs="-2.52000000 1.26000000 0.47500000" />
+    <surface id="r1_2_4" type="z-cylinder" coeffs="-1.26000000 1.26000000 0.41000000" />
+    <surface id="r2_2_4" type="z-cylinder" coeffs="-1.26000000 1.26000000 0.47500000" />
+    <surface id="r1_3_4" type="z-cylinder" coeffs="0.00000000 1.26000000 0.41000000" />
+    <surface id="r2_3_4" type="z-cylinder" coeffs="0.00000000 1.26000000 0.47500000" />
+    <surface id="r1_4_4" type="z-cylinder" coeffs="1.26000000 1.26000000 0.41000000" />
+    <surface id="r2_4_4" type="z-cylinder" coeffs="1.26000000 1.26000000 0.47500000" />
+    <surface id="r1_5_4" type="z-cylinder" coeffs="2.52000000 1.26000000 0.41000000" />
+    <surface id="r2_5_4" type="z-cylinder" coeffs="2.52000000 1.26000000 0.47500000" />
+    <surface id="r1_6_4" type="z-cylinder" coeffs="3.78000000 1.26000000 0.41000000" />
+    <surface id="r2_6_4" type="z-cylinder" coeffs="3.78000000 1.26000000 0.47500000" />
+    <surface id="r1_0_3" type="z-cylinder" coeffs="-3.78000000 0.00000000 0.41000000" />
+    <surface id="r2_0_3" type="z-cylinder" coeffs="-3.78000000 0.00000000 0.47500000" />
+    <surface id="r1_1_3" type="z-cylinder" coeffs="-2.52000000 0.00000000 0.41000000" />
+    <surface id="r2_1_3" type="z-cylinder" coeffs="-2.52000000 0.00000000 0.47500000" />
+    <surface id="r1_2_3" type="z-cylinder" coeffs="-1.26000000 0.00000000 0.41000000" />
+    <surface id="r2_2_3" type="z-cylinder" coeffs="-1.26000000 0.00000000 0.47500000" />
+    <surface id="r1_3_3" type="z-cylinder" coeffs="0.00000000 0.00000000 0.41000000" />
+    <surface id="r2_3_3" type="z-cylinder" coeffs="0.00000000 0.00000000 0.47500000" />
+    <surface id="r1_4_3" type="z-cylinder" coeffs="1.26000000 0.00000000 0.41000000" />
+    <surface id="r2_4_3" type="z-cylinder" coeffs="1.26000000 0.00000000 0.47500000" />
+    <surface id="r1_5_3" type="z-cylinder" coeffs="2.52000000 0.00000000 0.41000000" />
+    <surface id="r2_5_3" type="z-cylinder" coeffs="2.52000000 0.00000000 0.47500000" />
+    <surface id="r1_6_3" type="z-cylinder" coeffs="3.78000000 0.00000000 0.41000000" />
+    <surface id="r2_6_3" type="z-cylinder" coeffs="3.78000000 0.00000000 0.47500000" />
+    <surface id="r1_0_2" type="z-cylinder" coeffs="-3.78000000 -1.26000000 0.41000000" />
+    <surface id="r2_0_2" type="z-cylinder" coeffs="-3.78000000 -1.26000000 0.47500000" />
+    <surface id="r1_1_2" type="z-cylinder" coeffs="-2.52000000 -1.26000000 0.41000000" />
+    <surface id="r2_1_2" type="z-cylinder" coeffs="-2.52000000 -1.26000000 0.47500000" />
+    <surface id="r1_2_2" type="z-cylinder" coeffs="-1.26000000 -1.26000000 0.41000000" />
+    <surface id="r2_2_2" type="z-cylinder" coeffs="-1.26000000 -1.26000000 0.47500000" />
+    <surface id="r1_3_2" type="z-cylinder" coeffs="0.00000000 -1.26000000 0.41000000" />
+    <surface id="r2_3_2" type="z-cylinder" coeffs="0.00000000 -1.26000000 0.47500000" />
+    <surface id="r1_4_2" type="z-cylinder" coeffs="1.26000000 -1.26000000 0.41000000" />
+    <surface id="r2_4_2" type="z-cylinder" coeffs="1.26000000 -1.26000000 0.47500000" />
+    <surface id="r1_5_2" type="z-cylinder" coeffs="2.52000000 -1.26000000 0.41000000" />
+    <surface id="r2_5_2" type="z-cylinder" coeffs="2.52000000 -1.26000000 0.47500000" />
+    <surface id="r1_6_2" type="z-cylinder" coeffs="3.78000000 -1.26000000 0.41000000" />
+    <surface id="r2_6_2" type="z-cylinder" coeffs="3.78000000 -1.26000000 0.47500000" />
+    <surface id="r1_0_1" type="z-cylinder" coeffs="-3.78000000 -2.52000000 0.41000000" />
+    <surface id="r2_0_1" type="z-cylinder" coeffs="-3.78000000 -2.52000000 0.47500000" />
+    <surface id="r1_1_1" type="z-cylinder" coeffs="-2.52000000 -2.52000000 0.41000000" />
+    <surface id="r2_1_1" type="z-cylinder" coeffs="-2.52000000 -2.52000000 0.47500000" />
+    <surface id="r1_2_1" type="z-cylinder" coeffs="-1.26000000 -2.52000000 0.41000000" />
+    <surface id="r2_2_1" type="z-cylinder" coeffs="-1.26000000 -2.52000000 0.47500000" />
+    <surface id="r1_3_1" type="z-cylinder" coeffs="0.00000000 -2.52000000 0.41000000" />
+    <surface id="r2_3_1" type="z-cylinder" coeffs="0.00000000 -2.52000000 0.47500000" />
+    <surface id="r1_4_1" type="z-cylinder" coeffs="1.26000000 -2.52000000 0.41000000" />
+    <surface id="r2_4_1" type="z-cylinder" coeffs="1.26000000 -2.52000000 0.47500000" />
+    <surface id="r1_5_1" type="z-cylinder" coeffs="2.52000000 -2.52000000 0.41000000" />
+    <surface id="r2_5_1" type="z-cylinder" coeffs="2.52000000 -2.52000000 0.47500000" />
+    <surface id="r1_6_1" type="z-cylinder" coeffs="3.78000000 -2.52000000 0.41000000" />
+    <surface id="r2_6_1" type="z-cylinder" coeffs="3.78000000 -2.52000000 0.47500000" />
+    <surface id="r1_0_0" type="z-cylinder" coeffs="-3.78000000 -3.78000000 0.41000000" />
+    <surface id="r2_0_0" type="z-cylinder" coeffs="-3.78000000 -3.78000000 0.47500000" />
+    <surface id="r1_1_0" type="z-cylinder" coeffs="-2.52000000 -3.78000000 0.41000000" />
+    <surface id="r2_1_0" type="z-cylinder" coeffs="-2.52000000 -3.78000000 0.47500000" />
+    <surface id="r1_2_0" type="z-cylinder" coeffs="-1.26000000 -3.78000000 0.41000000" />
+    <surface id="r2_2_0" type="z-cylinder" coeffs="-1.26000000 -3.78000000 0.47500000" />
+    <surface id="r1_3_0" type="z-cylinder" coeffs="0.00000000 -3.78000000 0.41000000" />
+    <surface id="r2_3_0" type="z-cylinder" coeffs="0.00000000 -3.78000000 0.47500000" />
+    <surface id="r1_4_0" type="z-cylinder" coeffs="1.26000000 -3.78000000 0.41000000" />
+    <surface id="r2_4_0" type="z-cylinder" coeffs="1.26000000 -3.78000000 0.47500000" />
+    <surface id="r1_5_0" type="z-cylinder" coeffs="2.52000000 -3.78000000 0.41000000" />
+    <surface id="r2_5_0" type="z-cylinder" coeffs="2.52000000 -3.78000000 0.47500000" />
+    <surface id="r1_6_0" type="z-cylinder" coeffs="3.78000000 -3.78000000 0.41000000" />
+    <surface id="r2_6_0" type="z-cylinder" coeffs="3.78000000 -3.78000000 0.47500000" />
+    <cell id="c_0_6_1" material="fuel30" zone="x0 -x1 y6 -y7 zmin -zmax -r1_0_6" />
+    <cell id="c_0_6_2" material="clad" zone="x0 -x1 y6 -y7 zmin -zmax r1_0_6 -r2_0_6" />
+    <cell id="c_0_6_3" material="water" zone="x0 -x1 y6 -y7 zmin -zmax r2_0_6" />
+    <cell id="c_1_6_1" material="fuel30" zone="x1 -x2 y6 -y7 zmin -zmax -r1_1_6" />
+    <cell id="c_1_6_2" material="clad" zone="x1 -x2 y6 -y7 zmin -zmax r1_1_6 -r2_1_6" />
+    <cell id="c_1_6_3" material="water" zone="x1 -x2 y6 -y7 zmin -zmax r2_1_6" />
+    <cell id="c_2_6_1" material="fuel30" zone="x2 -x3 y6 -y7 zmin -zmax -r1_2_6" />
+    <cell id="c_2_6_2" material="clad" zone="x2 -x3 y6 -y7 zmin -zmax r1_2_6 -r2_2_6" />
+    <cell id="c_2_6_3" material="water" zone="x2 -x3 y6 -y7 zmin -zmax r2_2_6" />
+    <cell id="c_3_6_1" material="fuel30" zone="x3 -x4 y6 -y7 zmin -zmax -r1_3_6" />
+    <cell id="c_3_6_2" material="clad" zone="x3 -x4 y6 -y7 zmin -zmax r1_3_6 -r2_3_6" />
+    <cell id="c_3_6_3" material="water" zone="x3 -x4 y6 -y7 zmin -zmax r2_3_6" />
+    <cell id="c_4_6_1" material="fuel30" zone="x4 -x5 y6 -y7 zmin -zmax -r1_4_6" />
+    <cell id="c_4_6_2" material="clad" zone="x4 -x5 y6 -y7 zmin -zmax r1_4_6 -r2_4_6" />
+    <cell id="c_4_6_3" material="water" zone="x4 -x5 y6 -y7 zmin -zmax r2_4_6" />
+    <cell id="c_5_6_1" material="fuel30" zone="x5 -x6 y6 -y7 zmin -zmax -r1_5_6" />
+    <cell id="c_5_6_2" material="clad" zone="x5 -x6 y6 -y7 zmin -zmax r1_5_6 -r2_5_6" />
+    <cell id="c_5_6_3" material="water" zone="x5 -x6 y6 -y7 zmin -zmax r2_5_6" />
+    <cell id="c_6_6_1" material="fuel30" zone="x6 -x7 y6 -y7 zmin -zmax -r1_6_6" />
+    <cell id="c_6_6_2" material="clad" zone="x6 -x7 y6 -y7 zmin -zmax r1_6_6 -r2_6_6" />
+    <cell id="c_6_6_3" material="water" zone="x6 -x7 y6 -y7 zmin -zmax r2_6_6" />
+    <cell id="c_0_5_1" material="fuel30" zone="x0 -x1 y5 -y6 zmin -zmax -r1_0_5" />
+    <cell id="c_0_5_2" material="clad" zone="x0 -x1 y5 -y6 zmin -zmax r1_0_5 -r2_0_5" />
+    <cell id="c_0_5_3" material="water" zone="x0 -x1 y5 -y6 zmin -zmax r2_0_5" />
+    <cell id="c_1_5_1" material="fuel30" zone="x1 -x2 y5 -y6 zmin -zmax -r1_1_5" />
+    <cell id="c_1_5_2" material="clad" zone="x1 -x2 y5 -y6 zmin -zmax r1_1_5 -r2_1_5" />
+    <cell id="c_1_5_3" material="water" zone="x1 -x2 y5 -y6 zmin -zmax r2_1_5" />
+    <cell id="c_2_5_1" material="fuel30" zone="x2 -x3 y5 -y6 zmin -zmax -r1_2_5" />
+    <cell id="c_2_5_2" material="clad" zone="x2 -x3 y5 -y6 zmin -zmax r1_2_5 -r2_2_5" />
+    <cell id="c_2_5_3" material="water" zone="x2 -x3 y5 -y6 zmin -zmax r2_2_5" />
+    <cell id="c_3_5_1" material="fuel30" zone="x3 -x4 y5 -y6 zmin -zmax -r1_3_5" />
+    <cell id="c_3_5_2" material="clad" zone="x3 -x4 y5 -y6 zmin -zmax r1_3_5 -r2_3_5" />
+    <cell id="c_3_5_3" material="water" zone="x3 -x4 y5 -y6 zmin -zmax r2_3_5" />
+    <cell id="c_4_5_1" material="fuel30" zone="x4 -x5 y5 -y6 zmin -zmax -r1_4_5" />
+    <cell id="c_4_5_2" material="clad" zone="x4 -x5 y5 -y6 zmin -zmax r1_4_5 -r2_4_5" />
+    <cell id="c_4_5_3" material="water" zone="x4 -x5 y5 -y6 zmin -zmax r2_4_5" />
+    <cell id="c_5_5_1" material="fuel30" zone="x5 -x6 y5 -y6 zmin -zmax -r1_5_5" />
+    <cell id="c_5_5_2" material="clad" zone="x5 -x6 y5 -y6 zmin -zmax r1_5_5 -r2_5_5" />
+    <cell id="c_5_5_3" material="water" zone="x5 -x6 y5 -y6 zmin -zmax r2_5_5" />
+    <cell id="c_6_5_1" material="fuel30" zone="x6 -x7 y5 -y6 zmin -zmax -r1_6_5" />
+    <cell id="c_6_5_2" material="clad" zone="x6 -x7 y5 -y6 zmin -zmax r1_6_5 -r2_6_5" />
+    <cell id="c_6_5_3" material="water" zone="x6 -x7 y5 -y6 zmin -zmax r2_6_5" />
+    <cell id="c_0_4_1" material="fuel30" zone="x0 -x1 y4 -y5 zmin -zmax -r1_0_4" />
+    <cell id="c_0_4_2" material="clad" zone="x0 -x1 y4 -y5 zmin -zmax r1_0_4 -r2_0_4" />
+    <cell id="c_0_4_3" material="water" zone="x0 -x1 y4 -y5 zmin -zmax r2_0_4" />
+    <cell id="c_1_4_1" material="fuel30" zone="x1 -x2 y4 -y5 zmin -zmax -r1_1_4" />
+    <cell id="c_1_4_2" material="clad" zone="x1 -x2 y4 -y5 zmin -zmax r1_1_4 -r2_1_4" />
+    <cell id="c_1_4_3" material="water" zone="x1 -x2 y4 -y5 zmin -zmax r2_1_4" />
+    <cell id="c_2_4_1" material="fuel30" zone="x2 -x3 y4 -y5 zmin -zmax -r1_2_4" />
+    <cell id="c_2_4_2" material="clad" zone="x2 -x3 y4 -y5 zmin -zmax r1_2_4 -r2_2_4" />
+    <cell id="c_2_4_3" material="water" zone="x2 -x3 y4 -y5 zmin -zmax r2_2_4" />
+    <cell id="c_3_4_1" material="fuel30" zone="x3 -x4 y4 -y5 zmin -zmax -r1_3_4" />
+    <cell id="c_3_4_2" material="clad" zone="x3 -x4 y4 -y5 zmin -zmax r1_3_4 -r2_3_4" />
+    <cell id="c_3_4_3" material="water" zone="x3 -x4 y4 -y5 zmin -zmax r2_3_4" />
+    <cell id="c_4_4_1" material="fuel30" zone="x4 -x5 y4 -y5 zmin -zmax -r1_4_4" />
+    <cell id="c_4_4_2" material="clad" zone="x4 -x5 y4 -y5 zmin -zmax r1_4_4 -r2_4_4" />
+    <cell id="c_4_4_3" material="water" zone="x4 -x5 y4 -y5 zmin -zmax r2_4_4" />
+    <cell id="c_5_4_1" material="fuel30" zone="x5 -x6 y4 -y5 zmin -zmax -r1_5_4" />
+    <cell id="c_5_4_2" material="clad" zone="x5 -x6 y4 -y5 zmin -zmax r1_5_4 -r2_5_4" />
+    <cell id="c_5_4_3" material="water" zone="x5 -x6 y4 -y5 zmin -zmax r2_5_4" />
+    <cell id="c_6_4_1" material="fuel30" zone="x6 -x7 y4 -y5 zmin -zmax -r1_6_4" />
+    <cell id="c_6_4_2" material="clad" zone="x6 -x7 y4 -y5 zmin -zmax r1_6_4 -r2_6_4" />
+    <cell id="c_6_4_3" material="water" zone="x6 -x7 y4 -y5 zmin -zmax r2_6_4" />
+    <cell id="c_0_3_1" material="fuel30" zone="x0 -x1 y3 -y4 zmin -zmax -r1_0_3" />
+    <cell id="c_0_3_2" material="clad" zone="x0 -x1 y3 -y4 zmin -zmax r1_0_3 -r2_0_3" />
+    <cell id="c_0_3_3" material="water" zone="x0 -x1 y3 -y4 zmin -zmax r2_0_3" />
+    <cell id="c_1_3_1" material="fuel30" zone="x1 -x2 y3 -y4 zmin -zmax -r1_1_3" />
+    <cell id="c_1_3_2" material="clad" zone="x1 -x2 y3 -y4 zmin -zmax r1_1_3 -r2_1_3" />
+    <cell id="c_1_3_3" material="water" zone="x1 -x2 y3 -y4 zmin -zmax r2_1_3" />
+    <cell id="c_2_3_1" material="fuel30" zone="x2 -x3 y3 -y4 zmin -zmax -r1_2_3" />
+    <cell id="c_2_3_2" material="clad" zone="x2 -x3 y3 -y4 zmin -zmax r1_2_3 -r2_2_3" />
+    <cell id="c_2_3_3" material="water" zone="x2 -x3 y3 -y4 zmin -zmax r2_2_3" />
+    <cell id="c_3_3_1" material="fuel07" zone="x3 -x4 y3 -y4 zmin -zmax -r1_3_3" />
+    <cell id="c_3_3_2" material="clad" zone="x3 -x4 y3 -y4 zmin -zmax r1_3_3 -r2_3_3" />
+    <cell id="c_3_3_3" material="water" zone="x3 -x4 y3 -y4 zmin -zmax r2_3_3" />
+    <cell id="c_4_3_1" material="fuel30" zone="x4 -x5 y3 -y4 zmin -zmax -r1_4_3" />
+    <cell id="c_4_3_2" material="clad" zone="x4 -x5 y3 -y4 zmin -zmax r1_4_3 -r2_4_3" />
+    <cell id="c_4_3_3" material="water" zone="x4 -x5 y3 -y4 zmin -zmax r2_4_3" />
+    <cell id="c_5_3_1" material="fuel30" zone="x5 -x6 y3 -y4 zmin -zmax -r1_5_3" />
+    <cell id="c_5_3_2" material="clad" zone="x5 -x6 y3 -y4 zmin -zmax r1_5_3 -r2_5_3" />
+    <cell id="c_5_3_3" material="water" zone="x5 -x6 y3 -y4 zmin -zmax r2_5_3" />
+    <cell id="c_6_3_1" material="fuel30" zone="x6 -x7 y3 -y4 zmin -zmax -r1_6_3" />
+    <cell id="c_6_3_2" material="clad" zone="x6 -x7 y3 -y4 zmin -zmax r1_6_3 -r2_6_3" />
+    <cell id="c_6_3_3" material="water" zone="x6 -x7 y3 -y4 zmin -zmax r2_6_3" />
+    <cell id="c_0_2_1" material="fuel30" zone="x0 -x1 y2 -y3 zmin -zmax -r1_0_2" />
+    <cell id="c_0_2_2" material="clad" zone="x0 -x1 y2 -y3 zmin -zmax r1_0_2 -r2_0_2" />
+    <cell id="c_0_2_3" material="water" zone="x0 -x1 y2 -y3 zmin -zmax r2_0_2" />
+    <cell id="c_1_2_1" material="fuel30" zone="x1 -x2 y2 -y3 zmin -zmax -r1_1_2" />
+    <cell id="c_1_2_2" material="clad" zone="x1 -x2 y2 -y3 zmin -zmax r1_1_2 -r2_1_2" />
+    <cell id="c_1_2_3" material="water" zone="x1 -x2 y2 -y3 zmin -zmax r2_1_2" />
+    <cell id="c_2_2_1" material="fuel30" zone="x2 -x3 y2 -y3 zmin -zmax -r1_2_2" />
+    <cell id="c_2_2_2" material="clad" zone="x2 -x3 y2 -y3 zmin -zmax r1_2_2 -r2_2_2" />
+    <cell id="c_2_2_3" material="water" zone="x2 -x3 y2 -y3 zmin -zmax r2_2_2" />
+    <cell id="c_3_2_1" material="fuel30" zone="x3 -x4 y2 -y3 zmin -zmax -r1_3_2" />
+    <cell id="c_3_2_2" material="clad" zone="x3 -x4 y2 -y3 zmin -zmax r1_3_2 -r2_3_2" />
+    <cell id="c_3_2_3" material="water" zone="x3 -x4 y2 -y3 zmin -zmax r2_3_2" />
+    <cell id="c_4_2_1" material="fuel30" zone="x4 -x5 y2 -y3 zmin -zmax -r1_4_2" />
+    <cell id="c_4_2_2" material="clad" zone="x4 -x5 y2 -y3 zmin -zmax r1_4_2 -r2_4_2" />
+    <cell id="c_4_2_3" material="water" zone="x4 -x5 y2 -y3 zmin -zmax r2_4_2" />
+    <cell id="c_5_2_1" material="fuel30" zone="x5 -x6 y2 -y3 zmin -zmax -r1_5_2" />
+    <cell id="c_5_2_2" material="clad" zone="x5 -x6 y2 -y3 zmin -zmax r1_5_2 -r2_5_2" />
+    <cell id="c_5_2_3" material="water" zone="x5 -x6 y2 -y3 zmin -zmax r2_5_2" />
+    <cell id="c_6_2_1" material="fuel30" zone="x6 -x7 y2 -y3 zmin -zmax -r1_6_2" />
+    <cell id="c_6_2_2" material="clad" zone="x6 -x7 y2 -y3 zmin -zmax r1_6_2 -r2_6_2" />
+    <cell id="c_6_2_3" material="water" zone="x6 -x7 y2 -y3 zmin -zmax r2_6_2" />
+    <cell id="c_0_1_1" material="fuel30" zone="x0 -x1 y1 -y2 zmin -zmax -r1_0_1" />
+    <cell id="c_0_1_2" material="clad" zone="x0 -x1 y1 -y2 zmin -zmax r1_0_1 -r2_0_1" />
+    <cell id="c_0_1_3" material="water" zone="x0 -x1 y1 -y2 zmin -zmax r2_0_1" />
+    <cell id="c_1_1_1" material="fuel30" zone="x1 -x2 y1 -y2 zmin -zmax -r1_1_1" />
+    <cell id="c_1_1_2" material="clad" zone="x1 -x2 y1 -y2 zmin -zmax r1_1_1 -r2_1_1" />
+    <cell id="c_1_1_3" material="water" zone="x1 -x2 y1 -y2 zmin -zmax r2_1_1" />
+    <cell id="c_2_1_1" material="fuel30" zone="x2 -x3 y1 -y2 zmin -zmax -r1_2_1" />
+    <cell id="c_2_1_2" material="clad" zone="x2 -x3 y1 -y2 zmin -zmax r1_2_1 -r2_2_1" />
+    <cell id="c_2_1_3" material="water" zone="x2 -x3 y1 -y2 zmin -zmax r2_2_1" />
+    <cell id="c_3_1_1" material="fuel30" zone="x3 -x4 y1 -y2 zmin -zmax -r1_3_1" />
+    <cell id="c_3_1_2" material="clad" zone="x3 -x4 y1 -y2 zmin -zmax r1_3_1 -r2_3_1" />
+    <cell id="c_3_1_3" material="water" zone="x3 -x4 y1 -y2 zmin -zmax r2_3_1" />
+    <cell id="c_4_1_1" material="fuel30" zone="x4 -x5 y1 -y2 zmin -zmax -r1_4_1" />
+    <cell id="c_4_1_2" material="clad" zone="x4 -x5 y1 -y2 zmin -zmax r1_4_1 -r2_4_1" />
+    <cell id="c_4_1_3" material="water" zone="x4 -x5 y1 -y2 zmin -zmax r2_4_1" />
+    <cell id="c_5_1_1" material="fuel30" zone="x5 -x6 y1 -y2 zmin -zmax -r1_5_1" />
+    <cell id="c_5_1_2" material="clad" zone="x5 -x6 y1 -y2 zmin -zmax r1_5_1 -r2_5_1" />
+    <cell id="c_5_1_3" material="water" zone="x5 -x6 y1 -y2 zmin -zmax r2_5_1" />
+    <cell id="c_6_1_1" material="fuel30" zone="x6 -x7 y1 -y2 zmin -zmax -r1_6_1" />
+    <cell id="c_6_1_2" material="clad" zone="x6 -x7 y1 -y2 zmin -zmax r1_6_1 -r2_6_1" />
+    <cell id="c_6_1_3" material="water" zone="x6 -x7 y1 -y2 zmin -zmax r2_6_1" />
+    <cell id="c_0_0_1" material="fuel30" zone="x0 -x1 y0 -y1 zmin -zmax -r1_0_0" />
+    <cell id="c_0_0_2" material="clad" zone="x0 -x1 y0 -y1 zmin -zmax r1_0_0 -r2_0_0" />
+    <cell id="c_0_0_3" material="water" zone="x0 -x1 y0 -y1 zmin -zmax r2_0_0" />
+    <cell id="c_1_0_1" material="fuel30" zone="x1 -x2 y0 -y1 zmin -zmax -r1_1_0" />
+    <cell id="c_1_0_2" material="clad" zone="x1 -x2 y0 -y1 zmin -zmax r1_1_0 -r2_1_0" />
+    <cell id="c_1_0_3" material="water" zone="x1 -x2 y0 -y1 zmin -zmax r2_1_0" />
+    <cell id="c_2_0_1" material="fuel30" zone="x2 -x3 y0 -y1 zmin -zmax -r1_2_0" />
+    <cell id="c_2_0_2" material="clad" zone="x2 -x3 y0 -y1 zmin -zmax r1_2_0 -r2_2_0" />
+    <cell id="c_2_0_3" material="water" zone="x2 -x3 y0 -y1 zmin -zmax r2_2_0" />
+    <cell id="c_3_0_1" material="fuel30" zone="x3 -x4 y0 -y1 zmin -zmax -r1_3_0" />
+    <cell id="c_3_0_2" material="clad" zone="x3 -x4 y0 -y1 zmin -zmax r1_3_0 -r2_3_0" />
+    <cell id="c_3_0_3" material="water" zone="x3 -x4 y0 -y1 zmin -zmax r2_3_0" />
+    <cell id="c_4_0_1" material="fuel30" zone="x4 -x5 y0 -y1 zmin -zmax -r1_4_0" />
+    <cell id="c_4_0_2" material="clad" zone="x4 -x5 y0 -y1 zmin -zmax r1_4_0 -r2_4_0" />
+    <cell id="c_4_0_3" material="water" zone="x4 -x5 y0 -y1 zmin -zmax r2_4_0" />
+    <cell id="c_5_0_1" material="fuel30" zone="x5 -x6 y0 -y1 zmin -zmax -r1_5_0" />
+    <cell id="c_5_0_2" material="clad" zone="x5 -x6 y0 -y1 zmin -zmax r1_5_0 -r2_5_0" />
+    <cell id="c_5_0_3" material="water" zone="x5 -x6 y0 -y1 zmin -zmax r2_5_0" />
+    <cell id="c_6_0_1" material="fuel30" zone="x6 -x7 y0 -y1 zmin -zmax -r1_6_0" />
+    <cell id="c_6_0_2" material="clad" zone="x6 -x7 y0 -y1 zmin -zmax r1_6_0 -r2_6_0" />
+    <cell id="c_6_0_3" material="water" zone="x6 -x7 y0 -y1 zmin -zmax r2_6_0" />
+    <cell id="outside" material="void" zone="-x0|x7|-y0|y7|-zmin|zmax" />
+  </geometry>
+
+  <materials>
+    <library type="strack-mg" path="../mgxs/jeff15_lwr_1g.xml" />
+    <material id="fuel30" xs="fuel30" />
+    <material id="fuel07" xs="fuel07" />
+    <material id="clad" xs="clad" />
+    <material id="water" xs="water" />
+  </materials>
+
+
+  <options>
+    <run_mode>criticality</run_mode>
+    <cycle>8</cycle>
+    <inactive>4</inactive>
+    <particles>50</particles>
+    <distance_inactive>8.0</distance_inactive>
+    <distance_active>80.0</distance_active>
+    <seed>13579</seed>
+    <ray_source>
+      <lower_left>-4.41000000 -4.41000000 -50.00000000</lower_left>
+      <upper_right>4.41000000 4.41000000 50.00000000</upper_right>
+    </ray_source>
+  </options>
+
+</input>

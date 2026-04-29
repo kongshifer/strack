@@ -8,5 +8,9 @@
 - [homogeneous_square_2g](/d:/Strack/validation/cases/homogeneous_square_2g.md)
 - [reflective_sphere_1g](/d:/Strack/validation/cases/reflective_sphere_1g.md)
 - [slab_1d_1g](/d:/Strack/validation/cases/slab_1d_1g.md)
+- [jeff15_pincell_explicit_1g](/d:/Strack/validation/cases/jeff15_pincell_explicit_1g.md)
+- [jeff15_pincell_hierarchical_1g](/d:/Strack/validation/cases/jeff15_pincell_hierarchical_1g.md)
+- [jeff15_7x7_explicit_1g](/d:/Strack/validation/cases/jeff15_7x7_explicit_1g.md)
+- [jeff15_7x7_hierarchical_1g](/d:/Strack/validation/cases/jeff15_7x7_hierarchical_1g.md)
 
 结果汇总文件位于 [validation/results/README.md](/d:/Strack/validation/results/README.md)。

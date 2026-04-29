@@ -1,0 +1,66 @@
+<input>
+  <geometry>
+    <surface id="xmin" type="x-plane" coeffs="-4.41" boundary="reflect" />
+    <surface id="xmax" type="x-plane" coeffs="4.41" boundary="reflect" />
+    <surface id="ymin" type="y-plane" coeffs="-4.41" boundary="reflect" />
+    <surface id="ymax" type="y-plane" coeffs="4.41" boundary="reflect" />
+    <surface id="zmin" type="z-plane" coeffs="-50.0" boundary="reflect" />
+    <surface id="zmax" type="z-plane" coeffs="50.0" boundary="reflect" />
+    <surface id="uxmin" type="x-plane" coeffs="-0.63" />
+    <surface id="uxmax" type="x-plane" coeffs="0.63" />
+    <surface id="uymin" type="y-plane" coeffs="-0.63" />
+    <surface id="uymax" type="y-plane" coeffs="0.63" />
+    <surface id="uzmin" type="z-plane" coeffs="-50.0" />
+    <surface id="uzmax" type="z-plane" coeffs="50.0" />
+    <pin id="fuel30_pin">
+      <materials>fuel30 clad water</materials>
+      <radii>0.41 0.475</radii>
+    </pin>
+    <pin id="fuel07_pin">
+      <materials>fuel07 clad water</materials>
+      <radii>0.41 0.475</radii>
+    </pin>
+    <cell id="u30_cell" universe="u30" fill="fuel30_pin" zone="uxmin -uxmax uymin -uymax uzmin -uzmax" />
+    <cell id="u07_cell" universe="u07" fill="fuel07_pin" zone="uxmin -uxmax uymin -uymax uzmin -uzmax" />
+    <lattice id="lat7" type="rectangular">
+      <pitch>1.26 1.26</pitch>
+      <dimensions>7 7</dimensions>
+      <lower_left>-4.41 -4.41</lower_left>
+      <universes>
+        u30 u30 u30 u30 u30 u30 u30
+        u30 u30 u30 u30 u30 u30 u30
+        u30 u30 u30 u30 u30 u30 u30
+        u30 u30 u30 u07 u30 u30 u30
+        u30 u30 u30 u30 u30 u30 u30
+        u30 u30 u30 u30 u30 u30 u30
+        u30 u30 u30 u30 u30 u30 u30
+      </universes>
+    </lattice>
+    <cell id="root" fill="lat7" zone="xmin -xmax ymin -ymax zmin -zmax" />
+    <cell id="outside" material="void" zone="-xmin|xmax|-ymin|ymax|-zmin|zmax" />
+  </geometry>
+
+  <materials>
+    <library type="strack-mg" path="../mgxs/jeff15_lwr_1g.xml" />
+    <material id="fuel30" xs="fuel30" />
+    <material id="fuel07" xs="fuel07" />
+    <material id="clad" xs="clad" />
+    <material id="water" xs="water" />
+  </materials>
+
+
+  <options>
+    <run_mode>criticality</run_mode>
+    <cycle>8</cycle>
+    <inactive>4</inactive>
+    <particles>50</particles>
+    <distance_inactive>8.0</distance_inactive>
+    <distance_active>80.0</distance_active>
+    <seed>13579</seed>
+    <ray_source>
+      <lower_left>-4.41000000 -4.41000000 -50.00000000</lower_left>
+      <upper_right>4.41000000 4.41000000 50.00000000</upper_right>
+    </ray_source>
+  </options>
+
+</input>

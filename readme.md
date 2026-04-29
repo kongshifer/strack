@@ -8,6 +8,7 @@
 - 贴近 MCX 风格的 XML 输入子集
 - 自定义多群截面库格式 `strack-mg`
 - 支持 `x/y/z-plane`、`x/y/z-cylinder`、`sphere`
+- 支持 `pin`、`universe`、`rectangular lattice`
 - `cell` 级平源区与笛卡尔细分平源区
 - 基于随机射线的多群临界/固定源原型求解
 - `*.out` 与 `*_results.py` 输出

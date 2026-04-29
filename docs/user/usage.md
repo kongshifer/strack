@@ -7,6 +7,9 @@
 - 多群中子输运
 - `criticality` 与 `fixed-source` 两种运行模式
 - CSG 几何中的 `surface` 与 `cell`
+- `universe`
+- `pin`
+- `lattice`（当前为 `rectangular`）
 - `x-plane`、`y-plane`、`z-plane`
 - `x-cylinder`、`y-cylinder`、`z-cylinder`
 - `sphere`
@@ -16,7 +19,7 @@
 
 当前暂未实现：
 
-- `pin` / `lattice` / `universe`
+- `hexagonal lattice`
 - 高阶角通量加速与更完整的随机射线体积归一化
 - 连续能量截面
 - 完整 tally 体系
@@ -103,6 +106,64 @@ zone="xmin -xmax ymin -ymax zmin -zmax"
 - `upper_right`：细分盒右上前角
 
 当前版本要求这个细分盒覆盖你希望细分的 cell 区域。
+
+## 层级几何
+
+当前版本支持通过 `fill` 和 `universe` 组织层级几何。求解前，`tools/pack_input.py` 会把它们展开成扁平 CSG。
+
+### `pin`
+
+`pin` 当前实现为沿坐标轴的同心圆柱分区，默认沿 `z` 轴：
+
+```xml
+<pin id="fuel_pin">
+  <materials>fuel clad water</materials>
+  <radii>0.41 0.475</radii>
+</pin>
+```
+
+可选 `axis`：
+
+- `z-cylinder`：默认值
+- `x-cylinder`
+- `y-cylinder`
+
+### `universe`
+
+`universe` 通过 `cell` 的 `universe` 属性定义，通过另一个 `cell` 的 `fill` 引用：
+
+```xml
+<cell id="pin_box" universe="pin_u" fill="fuel_pin"
+      zone="uxmin -uxmax uymin -uymax uzmin -uzmax" />
+<cell id="root" fill="pin_u" zone="xmin -xmax ymin -ymax zmin -zmax" />
+```
+
+### `lattice`
+
+当前支持矩形 `lattice`：
+
+```xml
+<lattice id="lat7" type="rectangular">
+  <pitch>1.26 1.26</pitch>
+  <dimensions>7 7</dimensions>
+  <lower_left>-4.41 -4.41</lower_left>
+  <universes>
+    u30 u30 u30 u30 u30 u30 u30
+    u30 u30 u30 u30 u30 u30 u30
+    u30 u30 u30 u07 u30 u30 u30
+    u30 u30 u30 u30 u30 u30 u30
+    u30 u30 u30 u30 u30 u30 u30
+    u30 u30 u30 u30 u30 u30 u30
+    u30 u30 u30 u30 u30 u30 u30
+  </universes>
+</lattice>
+```
+
+说明：
+
+- 二维矩形格架按“每行从左到右，行从上到下”读入
+- 实际填充时仍以 `lower_left` 为原点向右、向上布置
+- 三维矩形格架支持 `dimensions="nx ny nz"` 与 `pitch="px py pz"`
 
 ## 多群截面库格式
 

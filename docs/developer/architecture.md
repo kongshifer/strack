@@ -8,6 +8,7 @@
    - 负责解析 XML
    - 负责解析自定义多群库
    - 负责把 `zone` 表达式转成 RPN
+   - 负责把 `pin / lattice / universe` 层级几何展开成扁平 CSG
    - 输出 Fortran 更容易读取的 `.stracki`
 2. `src/*.f90`
    - 负责几何定位、随机射线追踪、源迭代、keff 更新、结果输出
@@ -17,6 +18,7 @@
 ## 当前数值主线
 
 - 几何：基于 `surface + cell(zone)` 的 CSG
+- 层级几何：`pin / universe / rectangular lattice` 在 Python 预处理阶段展开
 - 空间离散：`cell` 或 `cell ∩ cartesian sub-box`
 - 射线：在 `ray_source` 盒内均匀采样起点，在单位球面均匀采样方向
 - 真空边界体系：优先从真空边界面起射并施加零入流
@@ -29,13 +31,13 @@
 
 - 当前体积/权重归一化仍是“工程上可运行的第一版”，还不是 OpenMC 随机射线那种更严格的 simulation-averaged volume 处理
 - 几何搜索是朴素全表扫描，后续应替换为加速结构
-- 暂未实现 `universe/pin/lattice`
+- `hexagonal lattice` 仍未实现
 - 暂未引入 CMFD、negative source fixup、source normalization 等增强机制
 
 ## 建议的下一步
 
-1. 把 `pin / lattice / universe` 接进当前 CSG 内核
+1. 增加 `hexagonal lattice` 与更完整的 cell transformation 支持
 2. 增加更严格的体积估计和通量归一化
 3. 引入 OpenMC 风格的随机射线参数与 inactive/active batch 管理
 4. 增加 OpenMP 并行
-5. 扩展验证题到 pin-cell、assembly、3D extrusion benchmark
+5. 扩展验证题到更完整的 assembly 与 3D benchmark

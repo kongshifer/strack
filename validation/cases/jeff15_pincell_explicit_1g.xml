@@ -1,0 +1,40 @@
+<input>
+  <geometry>
+    <surface id="xmin" type="x-plane" coeffs="-0.63" boundary="reflect" />
+    <surface id="xmax" type="x-plane" coeffs="0.63" boundary="reflect" />
+    <surface id="ymin" type="y-plane" coeffs="-0.63" boundary="reflect" />
+    <surface id="ymax" type="y-plane" coeffs="0.63" boundary="reflect" />
+    <surface id="zmin" type="z-plane" coeffs="-50.0" boundary="reflect" />
+    <surface id="zmax" type="z-plane" coeffs="50.0" boundary="reflect" />
+    <surface id="rf" type="z-cylinder" coeffs="0.0 0.0 0.41" />
+    <surface id="rc" type="z-cylinder" coeffs="0.0 0.0 0.475" />
+    <cell id="fuel" material="fuel30" zone="xmin -xmax ymin -ymax zmin -zmax -rf" />
+    <cell id="clad" material="clad" zone="xmin -xmax ymin -ymax zmin -zmax rf -rc" />
+    <cell id="water" material="water" zone="xmin -xmax ymin -ymax zmin -zmax rc" />
+    <cell id="outside" material="void" zone="-xmin|xmax|-ymin|ymax|-zmin|zmax" />
+  </geometry>
+
+  <materials>
+    <library type="strack-mg" path="../mgxs/jeff15_lwr_1g.xml" />
+    <material id="fuel30" xs="fuel30" />
+    <material id="fuel07" xs="fuel07" />
+    <material id="clad" xs="clad" />
+    <material id="water" xs="water" />
+  </materials>
+
+
+  <options>
+    <run_mode>criticality</run_mode>
+    <cycle>10</cycle>
+    <inactive>4</inactive>
+    <particles>80</particles>
+    <distance_inactive>8.0</distance_inactive>
+    <distance_active>80.0</distance_active>
+    <seed>13579</seed>
+    <ray_source>
+      <lower_left>-0.63000000 -0.63000000 -50.00000000</lower_left>
+      <upper_right>0.63000000 0.63000000 50.00000000</upper_right>
+    </ray_source>
+  </options>
+
+</input>

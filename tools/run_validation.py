@@ -83,7 +83,55 @@ def main() -> int:
             "expected": 0.95348,
             "tol": 1.0e-2,
         },
+        {
+            "name": "jeff15_pincell_explicit_1g",
+            "input": repo / "validation" / "cases" / "jeff15_pincell_explicit_1g.xml",
+            "doc": "../cases/jeff15_pincell_explicit_1g.md",
+            "description": "JEFF Report 15 风格单 pin-cell 显式 CSG 基线。",
+            "expected": 0.8054626000,
+            "tol": 1.0e-6,
+        },
+        {
+            "name": "jeff15_pincell_hierarchical_1g",
+            "input": repo / "validation" / "cases" / "jeff15_pincell_hierarchical_1g.xml",
+            "doc": "../cases/jeff15_pincell_hierarchical_1g.md",
+            "description": "同一 pin-cell 的 pin+universe 层级几何版本，对照显式 CSG。",
+            "expected_from": "jeff15_pincell_explicit_1g",
+            "tol": 1.0e-10,
+        },
+        {
+            "name": "jeff15_7x7_explicit_1g",
+            "input": repo / "validation" / "cases" / "jeff15_7x7_explicit_1g.xml",
+            "doc": "../cases/jeff15_7x7_explicit_1g.md",
+            "description": "JEFF Report 15 风格 7x7 pin-pattern 显式 CSG 基线。",
+            "expected": 0.8356857465,
+            "tol": 1.0e-6,
+        },
+        {
+            "name": "jeff15_7x7_hierarchical_1g",
+            "input": repo / "validation" / "cases" / "jeff15_7x7_hierarchical_1g.xml",
+            "doc": "../cases/jeff15_7x7_hierarchical_1g.md",
+            "description": "同一 7x7 pin-pattern 的 pin+lattice+universe 层级几何版本，对照显式 CSG。",
+            "expected_from": "jeff15_7x7_explicit_1g",
+            "tol": 1.0e-10,
+        },
     ]
+
+    result_cache: dict[str, dict[str, object]] = {}
+    input_cache: dict[Path, dict[str, object]] = {}
+
+    def ensure_result(case: dict[str, object]) -> dict[str, object]:
+        name = str(case["name"])
+        input_path = Path(case["input"])
+        if name in result_cache:
+            return result_cache[name]
+        if input_path in input_cache:
+            result_cache[name] = input_cache[input_path]
+            return result_cache[name]
+        result = run_case(Path(args.exe), input_path)
+        result_cache[name] = result
+        input_cache[input_path] = result
+        return result
 
     lines = [
         "# Validation Results",
@@ -92,14 +140,15 @@ def main() -> int:
         "| --- | --- | ---: | ---: | ---: | ---: |",
     ]
     for case in cases:
-      result = run_case(Path(args.exe), case["input"])
-      error = abs(float(result["keff"]) - case["expected"])
-      if error > case["tol"]:
-          raise SystemExit(f"validation failed for {case['input'].name}: error={error:.6f}")
-      lines.append(
-          f"| [{case['name']}]({case['doc']}) | {case['description']} | "
-          f"{float(result['keff']):.6f} | {case['expected']:.6f} | {error:.6f} | {case['tol']:.6f} |"
-      )
+        result = ensure_result(case)
+        expected = float(case["expected"]) if "expected" in case else float(ensure_result(next(item for item in cases if item["name"] == case["expected_from"]))["keff"])
+        error = abs(float(result["keff"]) - expected)
+        if error > float(case["tol"]):
+            raise SystemExit(f"validation failed for {Path(case['input']).name}: error={error:.6f}")
+        lines.append(
+            f"| [{case['name']}]({case['doc']}) | {case['description']} | "
+            f"{float(result['keff']):.6f} | {expected:.6f} | {error:.6f} | {float(case['tol']):.6f} |"
+        )
 
     (repo / "validation" / "results" / "README.md").write_text("\n".join(lines) + "\n", encoding="utf-8")
     return 0

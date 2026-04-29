@@ -1,8 +1,10 @@
 from __future__ import annotations
 
 import math
+import re
 import sys
 import xml.etree.ElementTree as ET
+from dataclasses import dataclass
 from pathlib import Path
 
 
@@ -18,6 +20,60 @@ ALIASES = {
     "cross": "transmission",
 }
 
+ROOT_UNIVERSE = "__root__"
+
+
+@dataclass
+class SurfaceDef:
+    id: str
+    surface_type: str
+    boundary: str
+    coeffs: list[float]
+
+
+@dataclass
+class SourceRegionsDef:
+    dims: list[int]
+    lower_left: list[float]
+    upper_right: list[float]
+
+
+@dataclass
+class CellDef:
+    id: str
+    universe: str
+    zone: str
+    material_id: str | None
+    fill: str | None
+    translation: tuple[float, float, float]
+    source_regions: SourceRegionsDef | None
+
+
+@dataclass
+class PinDef:
+    id: str
+    materials: list[str]
+    radii: list[float]
+    axis: str
+
+
+@dataclass
+class LatticeDef:
+    id: str
+    lattice_type: str
+    pitch: list[float]
+    dims: list[int]
+    lower_left: list[float]
+    universes: list[str]
+
+
+@dataclass
+class FlatCellDef:
+    id: str
+    material_id: str
+    zone: str
+    source_regions: SourceRegionsDef | None
+
 
 def text_of(node: ET.Element | None, default: str = "") -> str:
     if node is None or node.text is None:
@@ -27,7 +83,7 @@ def text_of(node: ET.Element | None, default: str = "") -> str:
 
 def attr_or_text(node: ET.Element, name: str, default: str = "") -> str:
     if name in node.attrib:
-      return " ".join(node.attrib[name].split())
+        return " ".join(node.attrib[name].split())
     child = node.find(name)
     return text_of(child, default)
 
@@ -93,6 +149,27 @@ def tokenize_zone(expr: str) -> list[str]:
     return expanded
 
 
+def lex_zone(expr: str) -> list[str]:
+    tokens: list[str] = []
+    current = []
+    special = {"(", ")", "|", "~"}
+    for char in expr:
+        if char in special:
+            if current:
+                tokens.append("".join(current))
+                current = []
+            tokens.append(char)
+        elif char.isspace():
+            if current:
+                tokens.append("".join(current))
+                current = []
+        else:
+            current.append(char)
+    if current:
+        tokens.append("".join(current))
+    return tokens
+
+
 def zone_to_rpn(expr: str, surfaces: dict[str, int]) -> list[str]:
     precedence = {"NOT": 3, "AND": 2, "OR": 1}
     output: list[str] = []
@@ -136,9 +213,7 @@ def read_library(library_path: Path) -> tuple[int, dict[str, dict[str, list[floa
         total = floats_from_text(text_of(material.find("total")))
         nu_sigma_f = floats_from_text(text_of(material.find("nu_sigma_f")))
         chi = floats_from_text(text_of(material.find("chi")))
-        scatter_rows = []
-        for row in material.findall("scatter/row"):
-            scatter_rows.append(floats_from_text(text_of(row)))
+        scatter_rows = [floats_from_text(text_of(row)) for row in material.findall("scatter/row")]
         if len(total) != groups or len(nu_sigma_f) != groups or len(chi) != groups:
             raise ValueError(f"MGXS vector size mismatch for material {mid}")
         if len(scatter_rows) != groups or any(len(row) != groups for row in scatter_rows):
@@ -152,6 +227,363 @@ def read_library(library_path: Path) -> tuple[int, dict[str, dict[str, list[floa
     return groups, materials
 
 
+def parse_source_regions(cell: ET.Element) -> SourceRegionsDef | None:
+    source_regions = cell.find("source_regions")
+    if source_regions is None:
+        return None
+    dims = ints_from_text(source_regions.attrib.get("dimension", source_regions.attrib.get("dimensions", "")))
+    if len(dims) == 2:
+        dims = [dims[0], dims[1], 1]
+    if len(dims) != 3:
+        raise ValueError(f"cell '{cell.attrib['id']}' subdivision must define 3 dimensions")
+    lower_left = floats_from_text(attr_or_text(source_regions, "lower_left"))
+    upper_right = floats_from_text(attr_or_text(source_regions, "upper_right"))
+    if len(lower_left) != 3 or len(upper_right) != 3:
+        raise ValueError(f"cell '{cell.attrib['id']}' subdivision must define lower_left and upper_right")
+    return SourceRegionsDef(dims=dims, lower_left=lower_left, upper_right=upper_right)
+
+
+def parse_translation(cell: ET.Element) -> tuple[float, float, float]:
+    values = floats_from_text(cell.attrib.get("translation", ""))
+    if not values:
+        return (0.0, 0.0, 0.0)
+    if len(values) != 3:
+        raise ValueError(f"cell '{cell.attrib['id']}' translation must have 3 values")
+    return (values[0], values[1], values[2])
+
+
+def parse_geometry_defs(geometry: ET.Element) -> tuple[
+    dict[str, SurfaceDef],
+    dict[str, list[CellDef]],
+    dict[str, PinDef],
+    dict[str, LatticeDef],
+]:
+    surfaces: dict[str, SurfaceDef] = {}
+    for node in geometry.findall("surface"):
+        sid = node.attrib["id"].strip()
+        surfaces[sid] = SurfaceDef(
+            id=sid,
+            surface_type=normalize_surface_type(node.attrib["type"]),
+            boundary=normalize_boundary(node.attrib.get("boundary", "transmission")),
+            coeffs=floats_from_text(node.attrib.get("coeffs", "")),
+        )
+
+    pins: dict[str, PinDef] = {}
+    for node in geometry.findall("pin"):
+        pid = node.attrib["id"].strip()
+        materials = text_of(node.find("materials")).split()
+        radii = floats_from_text(text_of(node.find("radii")))
+        axis = normalize_surface_type(node.attrib.get("axis", "z-cylinder"))
+        if axis not in {"x-cylinder", "y-cylinder", "z-cylinder"}:
+            raise ValueError(f"pin '{pid}' only supports x/y/z-cylinder axis definitions")
+        if len(materials) != len(radii) + 1:
+            raise ValueError(f"pin '{pid}' must have len(materials) = len(radii) + 1")
+        pins[pid] = PinDef(id=pid, materials=materials, radii=radii, axis=axis)
+
+    lattices: dict[str, LatticeDef] = {}
+    for node in geometry.findall("lattice"):
+        lid = node.attrib["id"].strip()
+        lattice_type = node.attrib.get("type", "").strip().lower()
+        pitch = floats_from_text(text_of(node.find("pitch")))
+        dims = ints_from_text(text_of(node.find("dimensions")))
+        lower_left = floats_from_text(text_of(node.find("lower_left")))
+        universes = text_of(node.find("universes")).split()
+        if lattice_type != "rectangular":
+            raise ValueError(f"lattice '{lid}' currently only supports rectangular type")
+        if len(dims) not in {2, 3}:
+            raise ValueError(f"lattice '{lid}' dimensions must have length 2 or 3")
+        if len(pitch) != len(dims):
+            raise ValueError(f"lattice '{lid}' pitch length must match dimensions length")
+        if len(lower_left) != len(dims):
+            raise ValueError(f"lattice '{lid}' lower_left length must match dimensions length")
+        if len(universes) != math.prod(dims):
+            raise ValueError(f"lattice '{lid}' universes count does not match dimensions")
+        lattices[lid] = LatticeDef(
+            id=lid,
+            lattice_type=lattice_type,
+            pitch=pitch,
+            dims=dims,
+            lower_left=lower_left,
+            universes=universes,
+        )
+
+    cells_by_universe: dict[str, list[CellDef]] = {}
+    for node in geometry.findall("cell"):
+        cid = node.attrib["id"].strip()
+        universe = node.attrib.get("universe", ROOT_UNIVERSE).strip() or ROOT_UNIVERSE
+        material_id = node.attrib.get("material")
+        if material_id is not None:
+            material_id = material_id.strip()
+        fill = node.attrib.get("fill")
+        if fill is not None:
+            fill = fill.strip()
+        if fill and material_id and material_id.lower() != "void":
+            raise ValueError(f"cell '{cid}' should not define both material and fill in this version")
+        zone = node.attrib["zone"].strip()
+        cell = CellDef(
+            id=cid,
+            universe=universe,
+            zone=zone,
+            material_id=material_id,
+            fill=fill,
+            translation=parse_translation(node),
+            source_regions=parse_source_regions(node),
+        )
+        cells_by_universe.setdefault(universe, []).append(cell)
+
+    return surfaces, cells_by_universe, pins, lattices
+
+
+def sanitize_hint(text: str) -> str:
+    clean = re.sub(r"[^A-Za-z0-9_]+", "_", text).strip("_")
+    return clean or "item"
+
+
+def intersect_expr(*parts: str) -> str:
+    clean = [part.strip() for part in parts if part and part.strip()]
+    if not clean:
+        return ""
+    if len(clean) == 1:
+        return clean[0]
+    return " ".join(f"({part})" for part in clean)
+
+
+class GeometryExpander:
+    def __init__(
+        self,
+        surfaces: dict[str, SurfaceDef],
+        cells_by_universe: dict[str, list[CellDef]],
+        pins: dict[str, PinDef],
+        lattices: dict[str, LatticeDef],
+    ) -> None:
+        self.original_surfaces = surfaces
+        self.cells_by_universe = cells_by_universe
+        self.pins = pins
+        self.lattices = lattices
+        self.flat_cells: list[FlatCellDef] = []
+        self.generated_surfaces: dict[str, SurfaceDef] = dict(surfaces)
+        self.surface_signature_to_id: dict[tuple[object, ...], str] = {}
+        for surface in surfaces.values():
+            self.surface_signature_to_id[self.surface_signature(surface.surface_type, surface.boundary, surface.coeffs)] = surface.id
+        self.surface_counter = 0
+        self.cell_counter = 0
+
+    def surface_signature(self, surface_type: str, boundary: str, coeffs: list[float]) -> tuple[object, ...]:
+        rounded = tuple(round(value, 12) for value in coeffs)
+        return (surface_type, boundary, rounded)
+
+    def make_surface_id(self) -> str:
+        self.surface_counter += 1
+        return f"g{self.surface_counter:06d}"
+
+    def make_cell_id(self, hint: str) -> str:
+        self.cell_counter += 1
+        base = sanitize_hint(hint)[:48]
+        return f"{base}_{self.cell_counter:04d}"
+
+    def get_or_create_surface(self, surface_type: str, boundary: str, coeffs: list[float]) -> str:
+        signature = self.surface_signature(surface_type, boundary, coeffs)
+        existing = self.surface_signature_to_id.get(signature)
+        if existing is not None:
+            return existing
+        sid = self.make_surface_id()
+        self.generated_surfaces[sid] = SurfaceDef(id=sid, surface_type=surface_type, boundary=boundary, coeffs=list(coeffs))
+        self.surface_signature_to_id[signature] = sid
+        return sid
+
+    def translate_surface(self, surface: SurfaceDef, shift: tuple[float, float, float]) -> list[float]:
+        coeffs = list(surface.coeffs)
+        if surface.surface_type == "x-plane":
+            coeffs[0] += shift[0]
+        elif surface.surface_type == "y-plane":
+            coeffs[0] += shift[1]
+        elif surface.surface_type == "z-plane":
+            coeffs[0] += shift[2]
+        elif surface.surface_type == "x-cylinder":
+            coeffs[0] += shift[1]
+            coeffs[1] += shift[2]
+        elif surface.surface_type == "y-cylinder":
+            coeffs[0] += shift[0]
+            coeffs[1] += shift[2]
+        elif surface.surface_type == "z-cylinder":
+            coeffs[0] += shift[0]
+            coeffs[1] += shift[1]
+        elif surface.surface_type == "sphere":
+            coeffs[0] += shift[0]
+            coeffs[1] += shift[1]
+            coeffs[2] += shift[2]
+        else:
+            raise ValueError(f"unsupported surface type '{surface.surface_type}' for translation")
+        return coeffs
+
+    def instantiate_surface(self, local_surface_id: str, shift: tuple[float, float, float]) -> str:
+        surface = self.original_surfaces[local_surface_id]
+        if shift == (0.0, 0.0, 0.0):
+            return surface.id
+        coeffs = self.translate_surface(surface, shift)
+        return self.get_or_create_surface(surface.surface_type, surface.boundary, coeffs)
+
+    def translate_zone_expr(self, expr: str, shift: tuple[float, float, float]) -> str:
+        translated: list[str] = []
+        for token in lex_zone(expr):
+            if token in {"(", ")", "|", "~"}:
+                translated.append(token)
+                continue
+            signed = token if token[0] in "+-" else f"+{token}"
+            sign = signed[0]
+            local_name = signed[1:]
+            if local_name not in self.original_surfaces:
+                raise KeyError(f"unknown surface '{local_name}' in zone '{expr}'")
+            global_name = self.instantiate_surface(local_name, shift)
+            translated.append(f"{sign}{global_name}" if sign == "-" else global_name)
+        return " ".join(translated)
+
+    def shift_source_regions(self, source_regions: SourceRegionsDef | None, shift: tuple[float, float, float]) -> SourceRegionsDef | None:
+        if source_regions is None:
+            return None
+        return SourceRegionsDef(
+            dims=list(source_regions.dims),
+            lower_left=[source_regions.lower_left[i] + shift[i] for i in range(3)],
+            upper_right=[source_regions.upper_right[i] + shift[i] for i in range(3)],
+        )
+
+    def emit_leaf(self, material_id: str, zone: str, source_regions: SourceRegionsDef | None, hint: str) -> None:
+        self.flat_cells.append(
+            FlatCellDef(
+                id=self.make_cell_id(hint),
+                material_id=material_id,
+                zone=zone,
+                source_regions=source_regions,
+            )
+        )
+
+    def dispatch_fill(self, fill_id: str, host_expr: str, shift: tuple[float, float, float], hint: str) -> None:
+        if fill_id in self.pins:
+            self.expand_pin(fill_id, host_expr, shift, hint)
+        elif fill_id in self.lattices:
+            self.expand_lattice(fill_id, host_expr, shift, hint)
+        elif fill_id in self.cells_by_universe:
+            self.expand_universe(fill_id, host_expr, shift, hint)
+        else:
+            raise KeyError(f"fill '{fill_id}' is not a known pin, lattice, or universe")
+
+    def expand_universe(self, universe_id: str, host_expr: str, shift: tuple[float, float, float], hint: str) -> None:
+        if universe_id not in self.cells_by_universe:
+            raise KeyError(f"unknown universe '{universe_id}'")
+        for cell in self.cells_by_universe[universe_id]:
+            local_zone = self.translate_zone_expr(cell.zone, shift)
+            combined_zone = intersect_expr(host_expr, local_zone)
+            child_shift = (
+                shift[0] + cell.translation[0],
+                shift[1] + cell.translation[1],
+                shift[2] + cell.translation[2],
+            )
+            child_hint = f"{hint}_{cell.id}"
+            if cell.fill is not None:
+                if cell.source_regions is not None:
+                    raise ValueError(f"cell '{cell.id}' uses source_regions together with fill, which is not supported yet")
+                self.dispatch_fill(cell.fill, combined_zone, child_shift, child_hint)
+            else:
+                if cell.material_id is None:
+                    raise ValueError(f"cell '{cell.id}' must define either material or fill")
+                self.emit_leaf(cell.material_id, combined_zone, self.shift_source_regions(cell.source_regions, shift), child_hint)
+
+    def expand_pin(self, pin_id: str, host_expr: str, shift: tuple[float, float, float], hint: str) -> None:
+        pin = self.pins[pin_id]
+        surface_ids: list[str] = []
+        for radius in pin.radii:
+            coeffs = [0.0, 0.0, radius]
+            surface_type = pin.axis
+            if pin.axis == "x-cylinder":
+                coeffs = [0.0, 0.0, radius]
+                coeffs[0] += shift[1]
+                coeffs[1] += shift[2]
+            elif pin.axis == "y-cylinder":
+                coeffs = [0.0, 0.0, radius]
+                coeffs[0] += shift[0]
+                coeffs[1] += shift[2]
+            else:
+                coeffs = [shift[0], shift[1], radius]
+            if pin.axis == "x-cylinder":
+                sid = self.get_or_create_surface(surface_type, "transmission", coeffs)
+            elif pin.axis == "y-cylinder":
+                sid = self.get_or_create_surface(surface_type, "transmission", coeffs)
+            else:
+                sid = self.get_or_create_surface(surface_type, "transmission", coeffs)
+            surface_ids.append(sid)
+
+        for index, material_id in enumerate(pin.materials):
+            if index == 0:
+                local_expr = f"-{surface_ids[0]}"
+            elif index < len(surface_ids):
+                local_expr = f"{surface_ids[index - 1]} -{surface_ids[index]}"
+            else:
+                local_expr = surface_ids[-1]
+            self.emit_leaf(material_id, intersect_expr(host_expr, local_expr), None, f"{hint}_{pin_id}_{index + 1}")
+
+    def tile_box_expr(self, lower: list[float], upper: list[float]) -> str:
+        sxmin = self.get_or_create_surface("x-plane", "transmission", [lower[0]])
+        sxmax = self.get_or_create_surface("x-plane", "transmission", [upper[0]])
+        symin = self.get_or_create_surface("y-plane", "transmission", [lower[1]])
+        symax = self.get_or_create_surface("y-plane", "transmission", [upper[1]])
+        pieces = [sxmin, f"-{sxmax}", symin, f"-{symax}"]
+        if lower[2] < upper[2] - 1.0e-12:
+            szmin = self.get_or_create_surface("z-plane", "transmission", [lower[2]])
+            szmax = self.get_or_create_surface("z-plane", "transmission", [upper[2]])
+            pieces.extend([szmin, f"-{szmax}"])
+        return " ".join(pieces)
+
+    def lattice_entries(self, lattice: LatticeDef) -> list[tuple[list[float], list[float], list[float], str]]:
+        entries: list[tuple[list[float], list[float], list[float], str]] = []
+        if len(lattice.dims) == 2:
+            nx, ny = lattice.dims
+            px, py = lattice.pitch
+            llx, lly = lattice.lower_left
+            for row in range(ny):
+                iy = ny - 1 - row
+                for ix in range(nx):
+                    fill_id = lattice.universes[row * nx + ix]
+                    lower = [llx + ix * px, lly + iy * py, 0.0]
+                    upper = [lower[0] + px, lower[1] + py, 0.0]
+                    center = [0.5 * (lower[0] + upper[0]), 0.5 * (lower[1] + upper[1]), 0.0]
+                    entries.append((lower, upper, center, fill_id))
+        else:
+            nx, ny, nz = lattice.dims
+            px, py, pz = lattice.pitch
+            llx, lly, llz = lattice.lower_left
+            layer_size = nx * ny
+            for iz in range(nz):
+                for row in range(ny):
+                    iy = ny - 1 - row
+                    for ix in range(nx):
+                        index = iz * layer_size + row * nx + ix
+                        fill_id = lattice.universes[index]
+                        lower = [llx + ix * px, lly + iy * py, llz + iz * pz]
+                        upper = [lower[0] + px, lower[1] + py, lower[2] + pz]
+                        center = [
+                            0.5 * (lower[0] + upper[0]),
+                            0.5 * (lower[1] + upper[1]),
+                            0.5 * (lower[2] + upper[2]),
+                        ]
+                        entries.append((lower, upper, center, fill_id))
+        return entries
+
+    def expand_lattice(self, lattice_id: str, host_expr: str, shift: tuple[float, float, float], hint: str) -> None:
+        lattice = self.lattices[lattice_id]
+        for idx, (lower_local, upper_local, center_local, fill_id) in enumerate(self.lattice_entries(lattice), start=1):
+            lower = [lower_local[i] + shift[i] for i in range(3)]
+            upper = [upper_local[i] + shift[i] for i in range(3)]
+            center = [center_local[i] + shift[i] for i in range(3)]
+            tile_expr = self.tile_box_expr(lower, upper)
+            child_host_expr = intersect_expr(host_expr, tile_expr)
+            child_shift = (center[0], center[1], center[2])
+            self.dispatch_fill(fill_id, child_host_expr, child_shift, f"{hint}_{lattice_id}_{idx}")
+
+    def expand_root(self) -> tuple[list[SurfaceDef], list[FlatCellDef]]:
+        self.expand_universe(ROOT_UNIVERSE, "", (0.0, 0.0, 0.0), "root")
+        return list(self.generated_surfaces.values()), self.flat_cells
+
+
 def pack(input_xml: Path, output_path: Path) -> None:
     tree = ET.parse(input_xml)
     root = tree.getroot()
@@ -162,15 +594,16 @@ def pack(input_xml: Path, output_path: Path) -> None:
     if geometry is None or materials_node is None or options is None:
         raise ValueError("input XML must contain geometry, materials, and options")
 
-    surface_nodes = geometry.findall("surface")
-    surfaces_by_name = {node.attrib["id"].strip(): idx + 1 for idx, node in enumerate(surface_nodes)}
+    surfaces, cells_by_universe, pins, lattices = parse_geometry_defs(geometry)
+    expander = GeometryExpander(surfaces, cells_by_universe, pins, lattices)
+    flat_surfaces, flat_cells = expander.expand_root()
 
     library_node = materials_node.find("library")
     if library_node is None:
         raise ValueError("materials block must define a <library>")
     library_type = library_node.attrib.get("type", "").strip().lower()
     if library_type not in {"strack-mg", "strack-mgxs"}:
-        raise ValueError("only strack-mg libraries are supported in the first milestone")
+        raise ValueError("only strack-mg libraries are supported in the current version")
     library_path = (input_xml.parent / library_node.attrib["path"]).resolve()
     ngroups, library = read_library(library_path)
 
@@ -201,48 +634,30 @@ def pack(input_xml: Path, output_path: Path) -> None:
                 raise KeyError(f"material '{mid}' maps to unknown library xs '{xs_id}'")
             material_map.append((mid, xs_id))
 
-    surfaces_out = []
-    for node in surface_nodes:
-        coeffs = floats_from_text(node.attrib.get("coeffs", ""))
-        surfaces_out.append(
-            (
-                node.attrib["id"].strip(),
-                normalize_surface_type(node.attrib["type"]),
-                normalize_boundary(node.attrib.get("boundary", "transmission")),
-                coeffs,
-            )
-        )
+    surfaces_out = [
+        (surface.id, surface.surface_type, surface.boundary, surface.coeffs)
+        for surface in flat_surfaces
+    ]
 
+    surfaces_by_name = {sid: idx + 1 for idx, (sid, _, _, _) in enumerate(surfaces_out)}
     cells_out = []
     cell_lookup: dict[str, int] = {}
-    for idx, cell in enumerate(geometry.findall("cell"), start=1):
-        cid = cell.attrib["id"].strip()
-        material_id = cell.attrib.get("material", "void").strip()
-        zone_expr = cell.attrib["zone"].strip()
-        tokens = zone_to_rpn(zone_expr, surfaces_by_name)
-        source_regions = cell.find("source_regions")
-        if source_regions is not None:
-            dims = ints_from_text(
-                source_regions.attrib.get("dimension", source_regions.attrib.get("dimensions", ""))
-            )
-            if len(dims) == 2:
-                dims = [dims[0], dims[1], 1]
-            if len(dims) != 3:
-                raise ValueError(f"cell '{cid}' subdivision must define 3 dimensions")
-            ll = floats_from_text(attr_or_text(source_regions, "lower_left"))
-            ur = floats_from_text(attr_or_text(source_regions, "upper_right"))
-            if len(ll) != 3 or len(ur) != 3:
-                raise ValueError(f"cell '{cid}' subdivision must define lower_left and upper_right")
-            subdivision = (dims, ll, ur)
-        else:
-            subdivision = None
-        cell_lookup[cid] = idx
-        cells_out.append((cid, material_id, tokens, subdivision))
+    for idx, cell in enumerate(flat_cells, start=1):
+        tokens = zone_to_rpn(cell.zone, surfaces_by_name)
+        subdivision = None
+        if cell.source_regions is not None:
+            subdivision = (cell.source_regions.dims, cell.source_regions.lower_left, cell.source_regions.upper_right)
+        cell_lookup[cell.id] = idx
+        cells_out.append((cell.id, cell.material_id, tokens, subdivision))
 
     fixed_sources = []
     if sources_node is not None:
         for source in sources_node.findall("source"):
             cell_id = source.attrib["cell"].strip()
+            if cell_id not in cell_lookup:
+                raise KeyError(
+                    f"fixed source references cell '{cell_id}', but only leaf material cells are currently supported"
+                )
             spectrum = floats_from_text(source.attrib.get("spectrum", ""))
             strength = float(source.attrib.get("strength", "1.0"))
             if len(spectrum) != ngroups:
@@ -260,11 +675,7 @@ def pack(input_xml: Path, output_path: Path) -> None:
         handle.write(f"DISTANCE_INACTIVE {distance_inactive:.16e}\n")
         handle.write(f"DISTANCE_ACTIVE {distance_active:.16e}\n")
         handle.write(f"SEED {seed}\n")
-        handle.write(
-            "RAY_BOX "
-            + " ".join(f"{value:.16e}" for value in (*lower_left, *upper_right))
-            + "\n"
-        )
+        handle.write("RAY_BOX " + " ".join(f"{value:.16e}" for value in (*lower_left, *upper_right)) + "\n")
         handle.write(f"MATERIAL_COUNT {len(material_map)}\n")
         for mid, xs_id in material_map:
             handle.write(f"MATERIAL {mid} {xs_id}\n")
@@ -275,9 +686,7 @@ def pack(input_xml: Path, output_path: Path) -> None:
             handle.write("NU_SIGMA_F " + " ".join(f"{value:.16e}" for value in xs_data["nu_sigma_f"]) + "\n")
             handle.write("CHI " + " ".join(f"{value:.16e}" for value in xs_data["chi"]) + "\n")
             for row_index, row in enumerate(xs_data["scatter"], start=1):
-                handle.write(
-                    f"SCATTER_ROW {row_index} " + " ".join(f"{value:.16e}" for value in row) + "\n"
-                )
+                handle.write(f"SCATTER_ROW {row_index} " + " ".join(f"{value:.16e}" for value in row) + "\n")
             handle.write("END_XS\n")
         handle.write(f"SURFACE_COUNT {len(surfaces_out)}\n")
         for sid, stype, boundary, coeffs in surfaces_out:

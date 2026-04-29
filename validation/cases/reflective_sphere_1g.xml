@@ -1,0 +1,26 @@
+<input>
+  <geometry>
+    <surface id="s1" type="sphere" coeffs="0.0 0.0 0.0 1.0" boundary="reflect" />
+    <cell id="core" material="fuel" zone="-s1">
+      <source_regions dimension="6 6 6" lower_left="-1 -1 -1" upper_right="1 1 1" />
+    </cell>
+    <cell id="outside" material="void" zone="s1" />
+  </geometry>
+  <materials>
+    <library type="strack-mg" path="../mgxs/sphere_1g.xml" />
+    <material id="fuel" xs="fuel" />
+  </materials>
+  <options>
+    <run_mode>criticality</run_mode>
+    <cycle>30</cycle>
+    <inactive>5</inactive>
+    <particles>1200</particles>
+    <distance_inactive>6.0</distance_inactive>
+    <distance_active>60.0</distance_active>
+    <seed>97531</seed>
+    <ray_source>
+      <lower_left>-1 -1 -1</lower_left>
+      <upper_right>1 1 1</upper_right>
+    </ray_source>
+  </options>
+</input>

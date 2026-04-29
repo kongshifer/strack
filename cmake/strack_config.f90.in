@@ -1,0 +1,4 @@
+module strack_config
+  implicit none
+  character(len=*), parameter :: strack_source_dir = "@CMAKE_CURRENT_SOURCE_DIR@"
+end module strack_config

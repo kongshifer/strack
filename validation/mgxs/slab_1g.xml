@@ -1,0 +1,10 @@
+<mgxs groups="1">
+  <material id="fuel">
+    <total>1.0</total>
+    <nu_sigma_f>0.10</nu_sigma_f>
+    <chi>1.0</chi>
+    <scatter>
+      <row>0.92</row>
+    </scatter>
+  </material>
+</mgxs>

@@ -1,0 +1,150 @@
+# Strack 使用说明
+
+## 当前支持范围
+
+首个版本聚焦于“先跑起来、先能验证”的主线，当前支持：
+
+- 多群中子输运
+- `criticality` 与 `fixed-source` 两种运行模式
+- CSG 几何中的 `surface` 与 `cell`
+- `x-plane`、`y-plane`、`z-plane`
+- `x-cylinder`、`y-cylinder`、`z-cylinder`
+- `sphere`
+- `cell` 作为单个平源区
+- `cell` 内的笛卡尔平源区细分
+- `reflect`、`vacuum`、`transmission` 边界
+
+当前暂未实现：
+
+- `pin` / `lattice` / `universe`
+- 高阶角通量加速与更完整的随机射线体积归一化
+- 连续能量截面
+- 完整 tally 体系
+
+## 构建
+
+```powershell
+cmake -S . -B build -G Ninja
+cmake --build build
+ctest --test-dir build --output-on-failure
+```
+
+## 运行
+
+```powershell
+.\build\strack.exe .\validation\cases\homogeneous_cube_1g.xml
+```
+
+程序会自动：
+
+1. 调用 `tools/pack_input.py` 把 XML 输入打包成 `.stracki`
+2. 运行 Fortran 求解器
+3. 生成 `*.out` 和 `*_results.py`
+
+## 输入文件结构
+
+```xml
+<input>
+  <geometry>
+    <surface id="xmin" type="x-plane" coeffs="-1.0" boundary="reflect" />
+    <surface id="xmax" type="x-plane" coeffs="1.0" boundary="reflect" />
+    <cell id="core" material="fuel" zone="xmin -xmax ymin -ymax zmin -zmax">
+      <source_regions dimension="6 6 6"
+                      lower_left="-1.0 -1.0 -1.0"
+                      upper_right="1.0 1.0 1.0" />
+    </cell>
+    <cell id="outside" material="void" zone="-xmin|xmax|-ymin|ymax|-zmin|zmax" />
+  </geometry>
+
+  <materials>
+    <library type="strack-mg" path="../mgxs/homogeneous_1g.xml" />
+    <material id="fuel" xs="fuel" />
+  </materials>
+
+  <options>
+    <run_mode>criticality</run_mode>
+    <cycle>60</cycle>
+    <inactive>10</inactive>
+    <particles>2000</particles>
+    <distance_inactive>10.0</distance_inactive>
+    <distance_active>90.0</distance_active>
+    <seed>13579</seed>
+    <ray_source>
+      <lower_left>-1.0 -1.0 -1.0</lower_left>
+      <upper_right>1.0 1.0 1.0</upper_right>
+    </ray_source>
+  </options>
+</input>
+```
+
+## 区域表达式
+
+`zone` 沿用 MCX / MCNP 一类 CSG 习惯：
+
+- 正半空间：`surf`
+- 负半空间：`-surf`
+- 交：空格
+- 并：`|`
+- 补：`~`
+- 括号：`(` `)`
+
+例如：
+
+```xml
+zone="xmin -xmax ymin -ymax zmin -zmax"
+```
+
+## 平源区细分
+
+`source_regions` 是当前版本对“cell 内继续细分平源区”的实现入口。
+
+- `dimension` 或 `dimensions`：`nx ny nz`
+- `lower_left`：细分盒左下后角
+- `upper_right`：细分盒右上前角
+
+当前版本要求这个细分盒覆盖你希望细分的 cell 区域。
+
+## 多群截面库格式
+
+库文件根节点为 `<mgxs groups="N">`，每个材料包含：
+
+- `total`
+- `nu_sigma_f`
+- `chi`
+- `scatter`
+
+示例：
+
+```xml
+<mgxs groups="2">
+  <material id="fuel">
+    <total>0.22 0.80</total>
+    <nu_sigma_f>0.14 0.12</nu_sigma_f>
+    <chi>1.0 0.0</chi>
+    <scatter>
+      <row>0.08 0.09</row>
+      <row>0.00 0.50</row>
+    </scatter>
+  </material>
+</mgxs>
+```
+
+`scatter` 的第 `g` 行表示“从群 `g` 散到各目标群”的截面。
+
+## 输出
+
+- `case.out`：迭代历史、keff、残差等屏幕回显信息
+- `case_results.py`：`keff_history`、`source_region_flux`、`cell_flux`、`source_region_weights`
+
+`*_results.py` 可以直接被 Python 导入：
+
+```python
+import case_results as r
+print(r.keff)
+print(r.cell_flux["core"])
+```
+
+## Validation
+
+- 验证题入口见 [validation/README.md](/d:/Strack/validation/README.md)
+- 每个算例都在 `validation/cases/` 下配有同名 Markdown 说明

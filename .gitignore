@@ -1,0 +1,4 @@
+build/
+*.stracki
+*.out
+*_results.py

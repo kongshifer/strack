@@ -1,0 +1,31 @@
+<input>
+  <geometry>
+    <surface id="xmin" type="x-plane" coeffs="-1.0" boundary="reflect" />
+    <surface id="xmax" type="x-plane" coeffs="1.0" boundary="reflect" />
+    <surface id="ymin" type="y-plane" coeffs="-1.0" boundary="reflect" />
+    <surface id="ymax" type="y-plane" coeffs="1.0" boundary="reflect" />
+    <surface id="zmin" type="z-plane" coeffs="-0.5" boundary="reflect" />
+    <surface id="zmax" type="z-plane" coeffs="0.5" boundary="reflect" />
+    <cell id="core" material="fuel" zone="xmin -xmax ymin -ymax zmin -zmax">
+      <source_regions dimension="8 8 1" lower_left="-1 -1 -0.5" upper_right="1 1 0.5" />
+    </cell>
+    <cell id="outside" material="void" zone="-xmin|xmax|-ymin|ymax|-zmin|zmax" />
+  </geometry>
+  <materials>
+    <library type="strack-mg" path="../mgxs/homogeneous_2g.xml" />
+    <material id="fuel" xs="fuel" />
+  </materials>
+  <options>
+    <run_mode>criticality</run_mode>
+    <cycle>36</cycle>
+    <inactive>6</inactive>
+    <particles>1400</particles>
+    <distance_inactive>5.0</distance_inactive>
+    <distance_active>50.0</distance_active>
+    <seed>24681</seed>
+    <ray_source>
+      <lower_left>-1 -1 -0.5</lower_left>
+      <upper_right>1 1 0.5</upper_right>
+    </ray_source>
+  </options>
+</input>

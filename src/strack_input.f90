@@ -40,6 +40,8 @@ contains
         model%case_name = trim(words(2))
       case ('RUN_MODE')
         model%run_mode = lower_string(trim(words(2)))
+      case ('SPATIAL_DIMENSION')
+        read(words(2), *) model%spatial_dimension
       case ('ENERGY_GROUPS')
         read(words(2), *) model%ngroups
       case ('CYCLE')
@@ -79,6 +81,10 @@ contains
     end do
 
     close(unit_id)
+
+    if (model%spatial_dimension /= 2 .and. model%spatial_dimension /= 3) then
+      error stop 'spatial_dimension must be 2 or 3'
+    end if
 
     call resolve_materials(model)
     call build_source_regions(model)

@@ -1,0 +1,157 @@
+module strack_parallel
+  use mpi
+  use strack_kinds, only: dp
+  implicit none
+  private
+
+  public :: parallel_initialize
+  public :: parallel_finalize
+  public :: parallel_rank
+  public :: parallel_size
+  public :: parallel_is_root
+  public :: parallel_barrier
+  public :: parallel_abort
+  public :: parallel_distribute_count
+  public :: parallel_sum_real_vector
+  public :: parallel_sum_real_matrix
+
+  integer :: strack_rank = 0
+  integer :: strack_size = 1
+  logical :: strack_initialized_here = .false.
+
+contains
+
+  subroutine parallel_initialize()
+    integer :: ierr
+    logical :: mpi_ready
+
+    call MPI_Initialized(mpi_ready, ierr)
+    call check_mpi_status(ierr, 'MPI_Initialized')
+
+    if (.not. mpi_ready) then
+      call MPI_Init(ierr)
+      call check_mpi_status(ierr, 'MPI_Init')
+      strack_initialized_here = .true.
+    end if
+
+    call MPI_Comm_rank(MPI_COMM_WORLD, strack_rank, ierr)
+    call check_mpi_status(ierr, 'MPI_Comm_rank')
+    call MPI_Comm_size(MPI_COMM_WORLD, strack_size, ierr)
+    call check_mpi_status(ierr, 'MPI_Comm_size')
+  end subroutine parallel_initialize
+
+  subroutine parallel_finalize()
+    integer :: ierr
+
+    if (.not. strack_initialized_here) return
+    call MPI_Finalize(ierr)
+    if (ierr /= MPI_SUCCESS) then
+      if (parallel_is_root()) write(*, '(A)') 'MPI failure in MPI_Finalize'
+      stop ierr
+    end if
+    strack_initialized_here = .false.
+  end subroutine parallel_finalize
+
+  integer function parallel_rank()
+    parallel_rank = strack_rank
+  end function parallel_rank
+
+  integer function parallel_size()
+    parallel_size = strack_size
+  end function parallel_size
+
+  logical function parallel_is_root()
+    parallel_is_root = strack_rank == 0
+  end function parallel_is_root
+
+  subroutine parallel_barrier()
+    integer :: ierr
+    call MPI_Barrier(MPI_COMM_WORLD, ierr)
+    call check_mpi_status(ierr, 'MPI_Barrier')
+  end subroutine parallel_barrier
+
+  subroutine parallel_abort(message, code)
+    character(len=*), intent(in) :: message
+    integer, intent(in), optional :: code
+    integer :: ierr, abort_code
+
+    abort_code = 1
+    if (present(code)) abort_code = code
+    if (parallel_is_root()) write(*, '(A)') trim(message)
+    call MPI_Abort(MPI_COMM_WORLD, abort_code, ierr)
+    stop abort_code
+  end subroutine parallel_abort
+
+  subroutine parallel_distribute_count(global_count, first_index, last_index, local_count)
+    integer, intent(in) :: global_count
+    integer, intent(out) :: first_index, last_index, local_count
+    integer :: base_count, extra_count
+
+    if (global_count <= 0) then
+      first_index = 1
+      last_index = 0
+      local_count = 0
+      return
+    end if
+
+    base_count = global_count / strack_size
+    extra_count = mod(global_count, strack_size)
+
+    if (strack_rank < extra_count) then
+      local_count = base_count + 1
+      first_index = strack_rank * local_count + 1
+    else
+      local_count = base_count
+      first_index = extra_count * (base_count + 1) + (strack_rank - extra_count) * base_count + 1
+    end if
+
+    if (local_count == 0) then
+      first_index = 1
+      last_index = 0
+    else
+      last_index = first_index + local_count - 1
+    end if
+  end subroutine parallel_distribute_count
+
+  subroutine parallel_sum_real_vector(values)
+    real(dp), intent(inout) :: values(:)
+    real(dp), allocatable :: reduced(:)
+    integer :: ierr
+
+    if (strack_size == 1) return
+
+    allocate(reduced(size(values)))
+    call MPI_Allreduce(values, reduced, size(values), MPI_DOUBLE_PRECISION, MPI_SUM, MPI_COMM_WORLD, ierr)
+    call check_mpi_status(ierr, 'MPI_Allreduce(vector)')
+    values = reduced
+    deallocate(reduced)
+  end subroutine parallel_sum_real_vector
+
+  subroutine parallel_sum_real_matrix(values)
+    real(dp), intent(inout) :: values(:,:)
+    real(dp), allocatable :: local_flat(:), reduced_flat(:)
+    integer :: ierr
+
+    if (strack_size == 1) return
+
+    allocate(local_flat(size(values)), reduced_flat(size(values)))
+    local_flat = reshape(values, [size(values)])
+    call MPI_Allreduce(local_flat, reduced_flat, size(local_flat), MPI_DOUBLE_PRECISION, MPI_SUM, MPI_COMM_WORLD, ierr)
+    call check_mpi_status(ierr, 'MPI_Allreduce(matrix)')
+    values = reshape(reduced_flat, shape(values))
+    deallocate(local_flat, reduced_flat)
+  end subroutine parallel_sum_real_matrix
+
+  subroutine check_mpi_status(ierr, context)
+    integer, intent(in) :: ierr
+    character(len=*), intent(in) :: context
+    integer :: abort_ierr
+
+    if (ierr == MPI_SUCCESS) return
+
+    if (parallel_is_root()) write(*, '(A)') 'MPI failure in '//trim(context)
+    call MPI_Abort(MPI_COMM_WORLD, ierr, abort_ierr)
+    stop ierr
+  end subroutine check_mpi_status
+
+end module strack_parallel

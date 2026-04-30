@@ -69,6 +69,7 @@ module strack_types
     character(len=path_len) :: output_prefix = ''
     character(len=path_len) :: case_name = ''
     character(len=str_len) :: run_mode = 'criticality'
+    integer :: spatial_dimension = 3
     integer :: ngroups = 0
     integer :: cycles = 0
     integer :: inactive = 0

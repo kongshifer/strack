@@ -1,0 +1,20 @@
+<mgxs groups="2">
+  <material id="fuel">
+    <total>1.96647e-1 5.96159e-1</total>
+    <nu_sigma_f>6.203e-3 1.101e-1</nu_sigma_f>
+    <chi>1.0 0.0</chi>
+    <scatter>
+      <row>1.78e-1 1.002e-2</row>
+      <row>1.089e-3 5.255e-1</row>
+    </scatter>
+  </material>
+  <material id="moderator">
+    <total>2.22064e-1 8.87874e-1</total>
+    <nu_sigma_f>0.0 0.0</nu_sigma_f>
+    <chi>1.0 0.0</chi>
+    <scatter>
+      <row>1.995e-1 2.188e-2</row>
+      <row>1.558e-3 8.783e-1</row>
+    </scatter>
+  </material>
+</mgxs>

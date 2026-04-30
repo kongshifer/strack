@@ -1,5 +1,7 @@
 module strack_output
+  use strack_config, only: strack_parallel_backend
   use strack_kinds, only: dp
+  use strack_parallel, only: parallel_size
   use strack_types
   implicit none
   private
@@ -30,9 +32,13 @@ contains
     write(log_unit, '(A)') ''
     write(log_unit, '(A,F14.7)') 'final_keff = ', results%keff
     write(log_unit, '(A,I8)') 'source_regions = ', size(model%source_regions)
+    write(log_unit, '(A,A)') 'parallel_backend = ', trim(strack_parallel_backend)
+    write(log_unit, '(A,I8)') 'parallel_ranks = ', parallel_size()
 
     open(newunit=py_unit, file=trim(model%output_prefix)//'_results.py', status='replace', action='write')
     write(py_unit, '(A)') 'case_name = "'//trim(model%case_name)//'"'
+    write(py_unit, '(A)') 'parallel_backend = "'//trim(strack_parallel_backend)//'"'
+    write(py_unit, '(A,I0)') 'parallel_ranks = ', parallel_size()
     write(py_unit, '(A,F18.10)') 'keff = ', results%keff
 
     write(py_unit, '(A)', advance='no') 'keff_history = ['

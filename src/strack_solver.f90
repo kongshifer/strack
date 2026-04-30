@@ -1,6 +1,8 @@
 module strack_solver
+  use iso_fortran_env, only: int64
   use strack_kinds, only: dp, tiny_value
   use strack_geometry
+  use strack_parallel, only: parallel_distribute_count, parallel_is_root, parallel_size, parallel_sum_real_matrix, parallel_sum_real_vector
   use strack_types
   implicit none
   private
@@ -13,14 +15,15 @@ contains
     type(model_t), intent(in) :: model
     type(results_t), intent(out) :: results
     integer, intent(in) :: log_unit
-    integer :: nsr, ng, cycle, seed, i, g, ray
+    integer :: nsr, ng, cycle, serial_seed, ray_seed, i, g, ray
+    integer :: local_begin, local_end, local_count
     real(dp), allocatable :: flux_old(:,:), flux_new(:,:), source(:,:), delta(:,:), track(:), track_acc(:)
     real(dp), allocatable :: fixed_external(:,:), fiss_old(:), fiss_new(:)
     real(dp) :: keff, new_keff, flux_change, f_old, f_new
 
     nsr = size(model%source_regions)
     ng = model%ngroups
-    seed = model%seed
+    serial_seed = model%seed
 
     allocate(flux_old(nsr, ng), flux_new(nsr, ng), source(nsr, ng), delta(nsr, ng), track(nsr), track_acc(nsr))
     allocate(fixed_external(nsr, ng), fiss_old(nsr), fiss_new(nsr))
@@ -40,10 +43,20 @@ contains
       call build_source(model, flux_old, fixed_external, keff, source)
       delta = 0.0_dp
       track = 0.0_dp
+      call parallel_distribute_count(model%particles, local_begin, local_end, local_count)
 
-      do ray = 1, model%particles
-        call sweep_random_ray(model, source, delta, track, seed)
+      do ray = local_begin, local_end
+        if (parallel_size() > 1) then
+          ray_seed = history_seed(model%seed, cycle, ray)
+        else
+          ray_seed = serial_seed
+        end if
+        call sweep_random_ray(model, source, delta, track, ray_seed)
+        if (parallel_size() == 1) serial_seed = ray_seed
       end do
+
+      call parallel_sum_real_matrix(delta)
+      call parallel_sum_real_vector(track)
 
       do i = 1, nsr
         do g = 1, ng
@@ -79,7 +92,9 @@ contains
 
       flux_change = maxval(abs(flux_new - flux_old) / max(abs(flux_old), 1.0e-10_dp))
       results%keff_history(cycle) = new_keff
-      write(log_unit, '(A,I5,2(A,F14.7))') 'cycle ', cycle, '  keff=', new_keff, '  max_dphi=', flux_change
+      if (parallel_is_root() .and. log_unit > 0) then
+        write(log_unit, '(A,I5,A,I8,2(A,F14.7))') 'cycle ', cycle, '  rays=', model%particles, '  keff=', new_keff, '  max_dphi=', flux_change
+      end if
 
       flux_old = flux_new
       keff = new_keff
@@ -91,6 +106,21 @@ contains
     results%converged_cycle = model%cycles
     call collapse_cell_flux(model, results)
   end subroutine solve_model
+
+  integer function history_seed(base_seed, cycle, ray)
+    integer, intent(in) :: base_seed, cycle, ray
+    integer(int64), parameter :: modulus = 2147483647_int64
+    integer(int64), parameter :: multiplier = 48271_int64
+    integer(int64), parameter :: cycle_mix = 104729_int64
+    integer(int64), parameter :: ray_mix = 1299709_int64
+    integer(int64) :: mixed
+
+    mixed = int(base_seed, int64)
+    mixed = mod(mixed + cycle_mix * int(cycle, int64) + ray_mix * int(ray, int64), modulus)
+    mixed = mod(multiplier * mixed + 1_int64, modulus)
+    if (mixed <= 0_int64) mixed = mixed + modulus - 1_int64
+    history_seed = int(mixed)
+  end function history_seed
 
   subroutine build_fixed_external(model, fixed_external)
     type(model_t), intent(in) :: model

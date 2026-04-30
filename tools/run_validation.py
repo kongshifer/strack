@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+import shlex
 import subprocess
 from pathlib import Path
 
@@ -32,8 +33,9 @@ def parse_result(py_path: Path) -> dict[str, object]:
     return namespace
 
 
-def run_case(exe: Path, case: Path) -> dict[str, object]:
-    subprocess.run([str(exe), str(case)], check=True, cwd=case.parent)
+def run_case(exe: Path, case: Path, launcher: list[str]) -> dict[str, object]:
+    command = [*launcher, str(exe), str(case)]
+    subprocess.run(command, check=True, cwd=case.parent)
     return parse_result(case.with_name(case.stem + "_results.py"))
 
 
@@ -41,15 +43,21 @@ def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--exe", required=True)
     parser.add_argument("--repo", required=True)
+    parser.add_argument(
+        "--launcher",
+        default="",
+        help='Optional parallel launcher, for example --launcher "mpirun -np 4" or --launcher "srun -n 4"',
+    )
     args = parser.parse_args()
 
     repo = Path(args.repo)
+    launcher = shlex.split(args.launcher)
     cases = [
         {
             "name": "homogeneous_cube_1g",
             "input": repo / "validation" / "cases" / "homogeneous_cube_1g.xml",
             "doc": "../cases/homogeneous_cube_1g.md",
-            "description": "全反射三维一群均匀体系，验证无泄漏极限下的 k_inf。",
+            "description": "Fully reflective 3D homogeneous 1-group cube used to track the kinf limit.",
             "expected": 1.25,
             "tol": 8.0e-2,
         },
@@ -57,7 +65,7 @@ def main() -> int:
             "name": "homogeneous_square_2g",
             "input": repo / "validation" / "cases" / "homogeneous_square_2g.xml",
             "doc": "../cases/homogeneous_square_2g.md",
-            "description": "全反射二维等效两群体系，验证多群散射与裂变耦合。",
+            "description": "Reflective 2D-equivalent 2-group homogeneous square for scattering/fission coupling.",
             "expected": dominant_keff(
                 2,
                 [0.22, 0.80],
@@ -71,7 +79,7 @@ def main() -> int:
             "name": "reflective_sphere_1g",
             "input": repo / "validation" / "cases" / "reflective_sphere_1g.xml",
             "doc": "../cases/reflective_sphere_1g.md",
-            "description": "全反射球形一群体系，验证曲面追踪与反射边界。",
+            "description": "Reflective 1-group sphere used to exercise curved-surface tracking.",
             "expected": 1.10,
             "tol": 1.0e-1,
         },
@@ -79,15 +87,23 @@ def main() -> int:
             "name": "slab_1d_1g",
             "input": repo / "validation" / "cases" / "slab_1d_1g.xml",
             "doc": "../cases/slab_1d_1g.md",
-            "description": "文献一维真空平板特征值题，采用 3D 等效建模验证泄漏处理。",
+            "description": "Literature 1D vacuum slab benchmark represented through the code's multidimensional geometry path.",
             "expected": 0.95348,
             "tol": 1.0e-2,
+        },
+        {
+            "name": "unstructured_circle_square_2g",
+            "input": repo / "validation" / "cases" / "unstructured_circle_square_2g.xml",
+            "doc": "../cases/unstructured_circle_square_2g.md",
+            "description": "Explicit 2D two-region circle-in-square benchmark used to track heterogeneous keff behavior.",
+            "expected": 1.174655,
+            "tol": 5.0e-3,
         },
         {
             "name": "jeff15_pincell_explicit_1g",
             "input": repo / "validation" / "cases" / "jeff15_pincell_explicit_1g.xml",
             "doc": "../cases/jeff15_pincell_explicit_1g.md",
-            "description": "JEFF Report 15 风格单 pin-cell 显式 CSG 基线。",
+            "description": "JEFF Report 15 style pin-cell explicit CSG baseline.",
             "expected": 0.8054626000,
             "tol": 1.0e-6,
         },
@@ -95,7 +111,7 @@ def main() -> int:
             "name": "jeff15_pincell_hierarchical_1g",
             "input": repo / "validation" / "cases" / "jeff15_pincell_hierarchical_1g.xml",
             "doc": "../cases/jeff15_pincell_hierarchical_1g.md",
-            "description": "同一 pin-cell 的 pin+universe 层级几何版本，对照显式 CSG。",
+            "description": "Same pin-cell modeled through pin+universe hierarchy and compared with explicit CSG.",
             "expected_from": "jeff15_pincell_explicit_1g",
             "tol": 1.0e-10,
         },
@@ -103,7 +119,7 @@ def main() -> int:
             "name": "jeff15_7x7_explicit_1g",
             "input": repo / "validation" / "cases" / "jeff15_7x7_explicit_1g.xml",
             "doc": "../cases/jeff15_7x7_explicit_1g.md",
-            "description": "JEFF Report 15 风格 7x7 pin-pattern 显式 CSG 基线。",
+            "description": "JEFF Report 15 style 7x7 pin-pattern explicit CSG baseline.",
             "expected": 0.8356857465,
             "tol": 1.0e-6,
         },
@@ -111,7 +127,7 @@ def main() -> int:
             "name": "jeff15_7x7_hierarchical_1g",
             "input": repo / "validation" / "cases" / "jeff15_7x7_hierarchical_1g.xml",
             "doc": "../cases/jeff15_7x7_hierarchical_1g.md",
-            "description": "同一 7x7 pin-pattern 的 pin+lattice+universe 层级几何版本，对照显式 CSG。",
+            "description": "Same 7x7 pin-pattern modeled through pin+lattice+universe hierarchy and compared with explicit CSG.",
             "expected_from": "jeff15_7x7_explicit_1g",
             "tol": 1.0e-10,
         },
@@ -128,7 +144,7 @@ def main() -> int:
         if input_path in input_cache:
             result_cache[name] = input_cache[input_path]
             return result_cache[name]
-        result = run_case(Path(args.exe), input_path)
+        result = run_case(Path(args.exe), input_path, launcher)
         result_cache[name] = result
         input_cache[input_path] = result
         return result
@@ -141,7 +157,9 @@ def main() -> int:
     ]
     for case in cases:
         result = ensure_result(case)
-        expected = float(case["expected"]) if "expected" in case else float(ensure_result(next(item for item in cases if item["name"] == case["expected_from"]))["keff"])
+        expected = float(case["expected"]) if "expected" in case else float(
+            ensure_result(next(item for item in cases if item["name"] == case["expected_from"]))["keff"]
+        )
         error = abs(float(result["keff"]) - expected)
         if error > float(case["tol"]):
             raise SystemExit(f"validation failed for {Path(case['input']).name}: error={error:.6f}")

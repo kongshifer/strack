@@ -1,0 +1,75 @@
+module strack_parallel
+  use strack_kinds, only: dp
+  implicit none
+  private
+
+  public :: parallel_initialize
+  public :: parallel_finalize
+  public :: parallel_rank
+  public :: parallel_size
+  public :: parallel_is_root
+  public :: parallel_barrier
+  public :: parallel_abort
+  public :: parallel_distribute_count
+  public :: parallel_sum_real_vector
+  public :: parallel_sum_real_matrix
+
+contains
+
+  subroutine parallel_initialize()
+  end subroutine parallel_initialize
+
+  subroutine parallel_finalize()
+  end subroutine parallel_finalize
+
+  integer function parallel_rank()
+    parallel_rank = 0
+  end function parallel_rank
+
+  integer function parallel_size()
+    parallel_size = 1
+  end function parallel_size
+
+  logical function parallel_is_root()
+    parallel_is_root = .true.
+  end function parallel_is_root
+
+  subroutine parallel_barrier()
+  end subroutine parallel_barrier
+
+  subroutine parallel_abort(message, code)
+    character(len=*), intent(in) :: message
+    integer, intent(in), optional :: code
+    integer :: exit_code
+
+    exit_code = 1
+    if (present(code)) exit_code = code
+    write(*, '(A)') trim(message)
+    stop exit_code
+  end subroutine parallel_abort
+
+  subroutine parallel_distribute_count(global_count, first_index, last_index, local_count)
+    integer, intent(in) :: global_count
+    integer, intent(out) :: first_index, last_index, local_count
+
+    if (global_count <= 0) then
+      first_index = 1
+      last_index = 0
+      local_count = 0
+      return
+    end if
+
+    first_index = 1
+    last_index = global_count
+    local_count = global_count
+  end subroutine parallel_distribute_count
+
+  subroutine parallel_sum_real_vector(values)
+    real(dp), intent(inout) :: values(:)
+  end subroutine parallel_sum_real_vector
+
+  subroutine parallel_sum_real_matrix(values)
+    real(dp), intent(inout) :: values(:,:)
+  end subroutine parallel_sum_real_matrix
+
+end module strack_parallel

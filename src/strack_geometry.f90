@@ -8,7 +8,6 @@ module strack_geometry
   public :: locate_cell
   public :: locate_source_region
   public :: random_point_in_geometry
-  public :: random_direction
   public :: sample_ray_start
   public :: nearest_surface_distance
   public :: subdivision_distance
@@ -101,11 +100,18 @@ contains
     integer, intent(out) :: cell_index
     integer, intent(out) :: source_region_index
     integer :: trial
+    real(dp) :: midplane_z
+
+    midplane_z = 0.5_dp * (model%ray_lower_left(3) + model%ray_upper_right(3))
 
     do trial = 1, 200000
       point(1) = uniform(seed, model%ray_lower_left(1), model%ray_upper_right(1))
       point(2) = uniform(seed, model%ray_lower_left(2), model%ray_upper_right(2))
-      point(3) = uniform(seed, model%ray_lower_left(3), model%ray_upper_right(3))
+      if (model%spatial_dimension == 2) then
+        point(3) = midplane_z
+      else
+        point(3) = uniform(seed, model%ray_lower_left(3), model%ray_upper_right(3))
+      end if
       cell_index = locate_cell(model, point)
       if (cell_index == 0) cycle
       if (model%cells(cell_index)%is_void) cycle
@@ -115,16 +121,22 @@ contains
     error stop 'failed to sample a point in geometry'
   end subroutine random_point_in_geometry
 
-  subroutine random_direction(seed, direction)
+  subroutine sample_direction(model, seed, direction)
+    type(model_t), intent(in) :: model
     integer, intent(inout) :: seed
     real(dp), intent(out) :: direction(3)
     real(dp) :: mu, phi_angle, radial
 
-    mu = uniform(seed, -1.0_dp, 1.0_dp)
-    phi_angle = uniform(seed, 0.0_dp, 2.0_dp * pi)
-    radial = sqrt(max(0.0_dp, 1.0_dp - mu * mu))
-    direction = [radial * cos(phi_angle), radial * sin(phi_angle), mu]
-  end subroutine random_direction
+    if (model%spatial_dimension == 2) then
+      phi_angle = uniform(seed, 0.0_dp, 2.0_dp * pi)
+      direction = [cos(phi_angle), sin(phi_angle), 0.0_dp]
+    else
+      mu = uniform(seed, -1.0_dp, 1.0_dp)
+      phi_angle = uniform(seed, 0.0_dp, 2.0_dp * pi)
+      radial = sqrt(max(0.0_dp, 1.0_dp - mu * mu))
+      direction = [radial * cos(phi_angle), radial * sin(phi_angle), mu]
+    end if
+  end subroutine sample_direction
 
   subroutine sample_ray_start(model, seed, point, direction, cell_index, source_region_index, launched_from_vacuum)
     type(model_t), intent(in) :: model
@@ -140,7 +152,7 @@ contains
     launched_from_vacuum = has_vacuum_faces
     if (.not. has_vacuum_faces) then
       call random_point_in_geometry(model, seed, point, cell_index, source_region_index)
-      call random_direction(seed, direction)
+      call sample_direction(model, seed, direction)
     end if
   end subroutine sample_ray_start
 
@@ -359,31 +371,40 @@ contains
     integer, intent(out) :: cell_index
     integer, intent(out) :: source_region_index
     logical :: active_face(6)
-    real(dp) :: face_area(6), total_area, pick, running
+    real(dp) :: face_measure(6), total_area, pick, running
     integer :: face, trial, i
-    real(dp) :: mu, phi_angle, radial
+    real(dp) :: mu, phi_angle, radial, eta, midplane_z
     real(dp) :: normal(3), tangent1(3), tangent2(3), eps
 
     launch_from_vacuum_face = .false.
     active_face = .false.
-    face_area = 0.0_dp
+    face_measure = 0.0_dp
     eps = 1.0e-8_dp
+    midplane_z = 0.5_dp * (model%ray_lower_left(3) + model%ray_upper_right(3))
 
     do i = 1, size(model%surfaces)
       call flag_vacuum_face(model, model%surfaces(i), active_face)
     end do
 
-    if (active_face(1)) face_area(1) = (model%ray_upper_right(2) - model%ray_lower_left(2)) * &
-                                       (model%ray_upper_right(3) - model%ray_lower_left(3))
-    if (active_face(2)) face_area(2) = face_area(1)
-    if (active_face(3)) face_area(3) = (model%ray_upper_right(1) - model%ray_lower_left(1)) * &
-                                       (model%ray_upper_right(3) - model%ray_lower_left(3))
-    if (active_face(4)) face_area(4) = face_area(3)
-    if (active_face(5)) face_area(5) = (model%ray_upper_right(1) - model%ray_lower_left(1)) * &
-                                       (model%ray_upper_right(2) - model%ray_lower_left(2))
-    if (active_face(6)) face_area(6) = face_area(5)
+    if (model%spatial_dimension == 2) then
+      active_face(5:6) = .false.
+      if (active_face(1)) face_measure(1) = model%ray_upper_right(2) - model%ray_lower_left(2)
+      if (active_face(2)) face_measure(2) = face_measure(1)
+      if (active_face(3)) face_measure(3) = model%ray_upper_right(1) - model%ray_lower_left(1)
+      if (active_face(4)) face_measure(4) = face_measure(3)
+    else
+      if (active_face(1)) face_measure(1) = (model%ray_upper_right(2) - model%ray_lower_left(2)) * &
+                                            (model%ray_upper_right(3) - model%ray_lower_left(3))
+      if (active_face(2)) face_measure(2) = face_measure(1)
+      if (active_face(3)) face_measure(3) = (model%ray_upper_right(1) - model%ray_lower_left(1)) * &
+                                            (model%ray_upper_right(3) - model%ray_lower_left(3))
+      if (active_face(4)) face_measure(4) = face_measure(3)
+      if (active_face(5)) face_measure(5) = (model%ray_upper_right(1) - model%ray_lower_left(1)) * &
+                                            (model%ray_upper_right(2) - model%ray_lower_left(2))
+      if (active_face(6)) face_measure(6) = face_measure(5)
+    end if
 
-    total_area = sum(face_area)
+    total_area = sum(face_measure)
     if (total_area <= tiny_value) return
 
     do trial = 1, 2000
@@ -391,8 +412,8 @@ contains
       running = 0.0_dp
       face = 0
       do i = 1, 6
-        running = running + face_area(i)
-        if (pick <= running .and. face_area(i) > 0.0_dp) then
+        running = running + face_measure(i)
+        if (pick <= running .and. face_measure(i) > 0.0_dp) then
           face = i
           exit
         end if
@@ -400,11 +421,18 @@ contains
       if (face == 0) cycle
 
       call sample_face_point(model, seed, face, point)
+      if (model%spatial_dimension == 2) point(3) = midplane_z
       call face_basis(face, normal, tangent1, tangent2)
-      mu = sqrt(uniform(seed, 0.0_dp, 1.0_dp))
-      phi_angle = uniform(seed, 0.0_dp, 2.0_dp * pi)
-      radial = sqrt(max(0.0_dp, 1.0_dp - mu * mu))
-      direction = mu * normal + radial * cos(phi_angle) * tangent1 + radial * sin(phi_angle) * tangent2
+      if (model%spatial_dimension == 2) then
+        eta = uniform(seed, -1.0_dp, 1.0_dp)
+        mu = sqrt(max(0.0_dp, 1.0_dp - eta * eta))
+        direction = mu * normal + eta * tangent1
+      else
+        mu = sqrt(uniform(seed, 0.0_dp, 1.0_dp))
+        phi_angle = uniform(seed, 0.0_dp, 2.0_dp * pi)
+        radial = sqrt(max(0.0_dp, 1.0_dp - mu * mu))
+        direction = mu * normal + radial * cos(phi_angle) * tangent1 + radial * sin(phi_angle) * tangent2
+      end if
       point = point + eps * normal
 
       cell_index = locate_cell(model, point)

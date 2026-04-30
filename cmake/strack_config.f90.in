@@ -1,4 +1,8 @@
 module strack_config
   implicit none
   character(len=*), parameter :: strack_source_dir = "@CMAKE_CURRENT_SOURCE_DIR@"
+  character(len=*), parameter :: strack_python_executable = "@STRACK_PYTHON_EXECUTABLE@"
+  character(len=*), parameter :: strack_parallel_backend = "@STRACK_PARALLEL_BACKEND@"
+  logical, parameter :: strack_mpi_enabled = @STRACK_MPI_ENABLED_VALUE@
+  logical, parameter :: strack_windows_shell = @STRACK_WINDOWS_SHELL_VALUE@
 end module strack_config

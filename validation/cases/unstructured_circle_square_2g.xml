@@ -1,0 +1,46 @@
+<input>
+  <geometry>
+    <surface id="xmin" type="x-plane" coeffs="-1.5" boundary="reflect" />
+    <surface id="xmax" type="x-plane" coeffs="1.5" boundary="reflect" />
+    <surface id="ymin" type="y-plane" coeffs="-1.5" boundary="reflect" />
+    <surface id="ymax" type="y-plane" coeffs="1.5" boundary="reflect" />
+    <surface id="xmid" type="x-plane" coeffs="0.0" boundary="transmission" />
+    <surface id="ymid" type="y-plane" coeffs="0.0" boundary="transmission" />
+    <surface id="zmin" type="z-plane" coeffs="-0.5" boundary="reflect" />
+    <surface id="zmax" type="z-plane" coeffs="0.5" boundary="reflect" />
+    <surface id="fuel_cyl" type="z-cylinder" coeffs="0.0 0.0 1.0" boundary="transmission" />
+
+    <cell id="fuel_pp" material="fuel" zone="xmid -xmax ymid -ymax zmin -zmax -fuel_cyl" />
+    <cell id="fuel_np" material="fuel" zone="xmin -xmid ymid -ymax zmin -zmax -fuel_cyl" />
+    <cell id="fuel_nn" material="fuel" zone="xmin -xmid ymin -ymid zmin -zmax -fuel_cyl" />
+    <cell id="fuel_pn" material="fuel" zone="xmid -xmax ymin -ymid zmin -zmax -fuel_cyl" />
+
+    <cell id="moderator_pp" material="moderator" zone="xmid -xmax ymid -ymax zmin -zmax fuel_cyl" />
+    <cell id="moderator_np" material="moderator" zone="xmin -xmid ymid -ymax zmin -zmax fuel_cyl" />
+    <cell id="moderator_nn" material="moderator" zone="xmin -xmid ymin -ymid zmin -zmax fuel_cyl" />
+    <cell id="moderator_pn" material="moderator" zone="xmid -xmax ymin -ymid zmin -zmax fuel_cyl" />
+
+    <cell id="outside" material="void" zone="-xmin|xmax|-ymin|ymax|-zmin|zmax" />
+  </geometry>
+
+  <materials>
+    <library type="strack-mg" path="../mgxs/unstructured_circle_square_2g.xml" />
+    <material id="fuel" xs="fuel" />
+    <material id="moderator" xs="moderator" />
+  </materials>
+
+  <options>
+    <run_mode>criticality</run_mode>
+    <spatial_dimension>2</spatial_dimension>
+    <cycle>120</cycle>
+    <inactive>18</inactive>
+    <particles>2500</particles>
+    <distance_inactive>5.0</distance_inactive>
+    <distance_active>45.0</distance_active>
+    <seed>314159</seed>
+    <ray_source>
+      <lower_left>-1.5 -1.5 -0.5</lower_left>
+      <upper_right>1.5 1.5 0.5</upper_right>
+    </ray_source>
+  </options>
+</input>

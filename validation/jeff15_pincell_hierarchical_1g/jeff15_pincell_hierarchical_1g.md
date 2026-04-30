@@ -1,28 +1,36 @@
-﻿# jeff15_pincell_hierarchical_1g
+# jeff15_pincell_hierarchical_1g
 
-## 棰樼洰鐩殑
+## 题目目的
 
-楠岃瘉 `pin + universe` 灞傜骇鍑犱綍鑳藉惁涓ユ牸灞曞紑涓轰笌鏄惧紡 CSG 鍩虹嚎涓€鑷寸殑鐗╃悊妯″瀷銆?
-## 鍙傝€冩潵婧?
-- OECD/NEA, JEFF Report 15: *Light Water Reactor (LWR) Pin Cell Benchmark Intercomparisons*.
-- 鍏ュ彛椤碉細https://www.oecd-nea.org/jcms/pl_13298/light-water-reactor-lwr-pin-cell-benchmark-intercomparisons?details=true
+验证 `pin + universe` 层级几何展开后，是否能与显式 pin-cell 基线给出一致结果。
 
-## 鍑犱綍璇存槑
+## 参考来源
 
-- 澶栧眰 root cell锛歚1.26 cm x 1.26 cm` 鏂瑰舰 pin-cell
-- `universe="pin_u"` 鐨勫眬閮ㄧ洅鍗曞厓濉厖 `fuel30_pin`
-- `fuel30_pin` 鐢?`fuel30 / clad / water` 涓夊眰缁勬垚
+- OECD/NEA, JEFF Report 15: *Light Water Reactor (LWR) Pin Cell Benchmark Intercomparisons*
 
-## 楠岃瘉瑙掕壊
+## 几何说明
 
-- 璇ョ畻渚嬪簲涓?[jeff15_pincell_explicit_1g.xml](/d:/Strack/validation/jeff15_pincell_explicit_1g/jeff15_pincell_explicit_1g.xml) 缁欏嚭鐩稿悓 `keff`
-- 瀹冧富瑕侀獙璇侊細
-- `pin` 鐨勭幆鍖哄睍寮€
-- `universe` 鐨勫眰绾у～鍏?- 灞€閮ㄥ嚑浣曞埌鍏ㄥ眬 CSG 鐨勬墎骞冲寲
+- 物理问题与 `jeff15_pincell_explicit_1g` 相同
+- 几何写法改为 `pin + universe`
+- 其余尺寸、边界和截面设置与显式基线保持一致
 
-## 鏂囦欢
+## 当前版本的物理简化
 
-- 杈撳叆锛歔jeff15_pincell_hierarchical_1g.xml](/d:/Strack/validation/jeff15_pincell_hierarchical_1g/jeff15_pincell_hierarchical_1g.xml)
-- 鏄惧紡鍩虹嚎锛歔jeff15_pincell_explicit_1g.xml](/d:/Strack/validation/jeff15_pincell_explicit_1g/jeff15_pincell_explicit_1g.xml)
-- 鎴潰锛歔jeff15_lwr_1g.xml](/d:/Strack/validation/jeff15_pincell_hierarchical_1g/jeff15_lwr_1g_mgxs.xml)
+- 这里只验证层级几何功能
+- 截面仍然使用自定义 1 群宏观截面库，不代表正式复现原始 benchmark
 
+## 当前验证结果
+
+- 当前自动回归结果：`keff = 0.808898`
+- 与显式基线 `jeff15_pincell_explicit_1g` 完全一致
+
+## 这个算例主要验证什么
+
+- `pin` 展开
+- `universe` 展开
+- 层级几何与显式 CSG 的一致性
+
+## 文件
+
+- 输入：[jeff15_pincell_hierarchical_1g.xml](/d:/Strack/validation/jeff15_pincell_hierarchical_1g/jeff15_pincell_hierarchical_1g.xml)
+- 截面：[jeff15_lwr_1g_mgxs.xml](/d:/Strack/validation/jeff15_pincell_hierarchical_1g/jeff15_lwr_1g_mgxs.xml)

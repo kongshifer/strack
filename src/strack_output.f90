@@ -32,6 +32,7 @@ contains
     write(log_unit, '(A)') ''
     write(log_unit, '(A,F14.7)') 'final_keff = ', results%keff
     write(log_unit, '(A,I8)') 'source_regions = ', size(model%source_regions)
+    write(log_unit, '(A,A)') 'geometry_search = ', trim(results%geometry_search)
     write(log_unit, '(A,A)') 'parallel_backend = ', trim(strack_parallel_backend)
     write(log_unit, '(A,I8)') 'parallel_ranks = ', parallel_size()
 
@@ -39,6 +40,7 @@ contains
     write(py_unit, '(A)') 'case_name = "'//trim(model%case_name)//'"'
     write(py_unit, '(A)') 'parallel_backend = "'//trim(strack_parallel_backend)//'"'
     write(py_unit, '(A,I0)') 'parallel_ranks = ', parallel_size()
+    write(py_unit, '(A)') 'geometry_search = "'//trim(results%geometry_search)//'"'
     write(py_unit, '(A,F18.10)') 'keff = ', results%keff
 
     write(py_unit, '(A)', advance='no') 'keff_history = ['

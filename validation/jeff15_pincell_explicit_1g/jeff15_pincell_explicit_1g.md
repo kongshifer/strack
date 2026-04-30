@@ -1,30 +1,37 @@
-﻿# jeff15_pincell_explicit_1g
+# jeff15_pincell_explicit_1g
 
-## 棰樼洰鐩殑
+## 题目目的
 
-浣滀负 `pin / universe` 鍑犱綍鍔熻兘鐨勬樉寮?CSG 鍩虹嚎銆?
-## 鍙傝€冩潵婧?
-- OECD/NEA, JEFF Report 15: *Light Water Reactor (LWR) Pin Cell Benchmark Intercomparisons*.
-- 鍏ュ彛椤碉細https://www.oecd-nea.org/jcms/pl_13298/light-water-reactor-lwr-pin-cell-benchmark-intercomparisons?details=true
+作为 `pin / universe` 功能开发前的显式 `surface + cell` CSG 基线。
 
-## 鍑犱綍璇存槑
+## 参考来源
 
-- 鍙?JEFF Report 15 鍗?pin-cell 闂鐨勫吀鍨嬪嚑浣曞昂搴?- pin pitch锛歚1.26 cm`
-- 鐕冩枡鍗婂緞锛歚0.41 cm`
-- 鍖呭３澶栧崐寰勶細`0.475 cm`
-- 澶栬竟鐣岋細鍥涘懆鍙婅酱鍚戝叏鍙嶅皠
+- OECD/NEA, JEFF Report 15: *Light Water Reactor (LWR) Pin Cell Benchmark Intercomparisons*
 
-## 褰撳墠鐗堟湰鐨勭墿鐞嗙畝鍖?
-- 涓轰簡鏈嶅姟 `strack` 鐨勫揩閫熷洖褰掗獙璇侊紝杩欓噷娌℃湁浣跨敤鍘熷 benchmark 鐨勮繛缁兘閲忔垨澶氱兢鐗╃悊鏁版嵁
-- 褰撳墠鍙繚鐣?benchmark 椋庢牸鐨勫嚑浣曞昂瀵?- 鎴潰浣跨敤鑷畾涔?1 缇ゅ畯瑙傛埅闈細[jeff15_lwr_1g.xml](/d:/Strack/validation/jeff15_pincell_explicit_1g/jeff15_lwr_1g_mgxs.xml)
+## 几何说明
 
-## 楠岃瘉瑙掕壊
+- pin pitch：`1.26 cm`
+- 燃料半径：`0.41 cm`
+- 包壳外半径：`0.475 cm`
+- 外边界与轴向边界：全反射
+- 建模方式：显式 `surface + cell`
 
-- 杩欐槸鏄惧紡 `surface + cell` 寤烘ā鍩虹嚎
-- 瀵瑰簲灞傜骇鐗堟湰瑙?[jeff15_pincell_hierarchical_1g.md](/d:/Strack/validation/jeff15_pincell_hierarchical_1g/jeff15_pincell_hierarchical_1g.md)
+## 当前版本的物理简化
 
-## 鏂囦欢
+- 这里只借鉴 benchmark 的几何风格
+- 截面使用自定义的 1 群宏观截面库，用于快速回归，不代表正式复现原始 benchmark
 
-- 杈撳叆锛歔jeff15_pincell_explicit_1g.xml](/d:/Strack/validation/jeff15_pincell_explicit_1g/jeff15_pincell_explicit_1g.xml)
-- 鎴潰锛歔jeff15_lwr_1g.xml](/d:/Strack/validation/jeff15_pincell_explicit_1g/jeff15_lwr_1g_mgxs.xml)
+## 当前验证结果
 
+- 当前自动回归结果：`keff = 0.808898`
+- 该值作为显式基线，被层级几何版本直接对照
+
+## 这个算例主要验证什么
+
+- 显式 pin-cell CSG 建模
+- 后续 `pin + universe` 版本的对照基线
+
+## 文件
+
+- 输入：[jeff15_pincell_explicit_1g.xml](/d:/Strack/validation/jeff15_pincell_explicit_1g/jeff15_pincell_explicit_1g.xml)
+- 截面：[jeff15_lwr_1g_mgxs.xml](/d:/Strack/validation/jeff15_pincell_explicit_1g/jeff15_lwr_1g_mgxs.xml)

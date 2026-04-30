@@ -608,6 +608,7 @@ def pack(input_xml: Path, output_path: Path) -> None:
     ngroups, library = read_library(library_path)
 
     run_mode = text_of(options.find("run_mode"), "criticality").lower()
+    geometry_search = text_of(options.find("geometry_search"), "global").lower()
     spatial_dimension = int(text_of(options.find("spatial_dimension"), "3"))
     cycle = int(text_of(options.find("cycle"), "50"))
     inactive = int(text_of(options.find("inactive"), "10"))
@@ -669,6 +670,7 @@ def pack(input_xml: Path, output_path: Path) -> None:
         handle.write("STRACK_INPUT_V1\n")
         handle.write(f"CASE {input_xml.stem}\n")
         handle.write(f"RUN_MODE {run_mode}\n")
+        handle.write(f"GEOMETRY_SEARCH {geometry_search}\n")
         handle.write(f"SPATIAL_DIMENSION {spatial_dimension}\n")
         handle.write(f"ENERGY_GROUPS {ngroups}\n")
         handle.write(f"CYCLE {cycle}\n")

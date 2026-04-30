@@ -16,12 +16,26 @@ module strack_geometry
 
 contains
 
-  integer function locate_cell(model, point)
+  integer function locate_cell(model, point, surface_index)
     type(model_t), intent(in) :: model
     real(dp), intent(in) :: point(3)
+    integer, intent(in), optional :: surface_index
     integer :: i
+    integer :: candidate
 
     locate_cell = 0
+    if (present(surface_index)) then
+      if (trim(model%geometry_search) == 'surface-local') then
+        do i = 1, size(model%surfaces(surface_index)%candidate_cells)
+          candidate = model%surfaces(surface_index)%candidate_cells(i)
+          if (point_in_cell(model, model%cells(candidate), point)) then
+            locate_cell = candidate
+            return
+          end if
+        end do
+      end if
+    end if
+
     do i = 1, size(model%cells)
       if (point_in_cell(model, model%cells(i), point)) then
         locate_cell = i
@@ -156,24 +170,39 @@ contains
     end if
   end subroutine sample_ray_start
 
-  subroutine nearest_surface_distance(model, point, direction, distance, surface_index)
+  subroutine nearest_surface_distance(model, cell_index, point, direction, distance, surface_index)
     type(model_t), intent(in) :: model
+    integer, intent(in) :: cell_index
     real(dp), intent(in) :: point(3)
     real(dp), intent(in) :: direction(3)
     real(dp), intent(out) :: distance
     integer, intent(out) :: surface_index
     integer :: i
     real(dp) :: trial
+    integer :: local_surface
 
     distance = huge(1.0_dp)
     surface_index = 0
-    do i = 1, size(model%surfaces)
-      trial = surface_distance(model%surfaces(i), point, direction)
-      if (trial > 1.0e-10_dp .and. trial < distance) then
-        distance = trial
-        surface_index = i
-      end if
-    end do
+    if (trim(model%geometry_search) == 'surface-local') then
+      do i = 1, size(model%cells(cell_index)%surface_indices)
+        local_surface = model%cells(cell_index)%surface_indices(i)
+        trial = surface_distance(model%surfaces(local_surface), point, direction)
+        if (trial > 1.0e-10_dp .and. trial < distance) then
+          distance = trial
+          surface_index = local_surface
+        end if
+      end do
+    end if
+
+    if (surface_index == 0) then
+      do i = 1, size(model%surfaces)
+        trial = surface_distance(model%surfaces(i), point, direction)
+        if (trial > 1.0e-10_dp .and. trial < distance) then
+          distance = trial
+          surface_index = i
+        end if
+      end do
+    end if
   end subroutine nearest_surface_distance
 
   real(dp) function subdivision_distance(cell, source_region, point, direction)

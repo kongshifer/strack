@@ -3,3 +3,4 @@ __pycache__/
 *.stracki
 *.out
 *_results.py
+explorations/

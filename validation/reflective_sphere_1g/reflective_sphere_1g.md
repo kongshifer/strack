@@ -1,27 +1,34 @@
-﻿# reflective_sphere_1g
+# reflective_sphere_1g
 
-## 棰樼洰鐩殑
+## 题目目的
 
-楠岃瘉鐞冮潰鍑犱綍杩借釜鍜屽弽灏勮竟鐣屽鐞嗘槸鍚︽纭€?
-## 妯″瀷璇存槑
+验证程序对球面 CSG 几何和曲面反射边界的处理是否正常。
 
-- 鍑犱綍锛氬崐寰?`1.0 cm` 鐨勭悆浣?- 杈圭晫锛氱悆闈㈠叏鍙嶅皠
-- 鑳界兢锛? 缇?- 骞虫簮鍖猴細澶栨帴鐩掑唴 `6 x 6 x 6` 缁嗗垎
+## 模型说明
 
-## 鎴潰鍙傛暟
+- 几何：半径为 `1.0` 的球体
+- 边界：球面全反射
+- 能群：1 群
+- 平源区：在包围盒 `[-1, 1]^3` 中使用 `6 x 6 x 6` 的 `source region` 细分
 
-- `Sigma_t = 0.50`
-- `nuSigma_f = 0.11`
-- `Sigma_s = 0.40`
-- 鍥犳 `Sigma_a = 0.10`
-- 鍙傝€冩湰寰佸€硷細`k_inf = 1.10`
+## 参考值
 
-## 楠岃瘉鍒ゆ嵁
+- 当前验证参考：`keff = 1.100000`
 
-- 褰撳墠 `tools/run_validation.py` 涓噰鐢ㄥ宸?`1.0e-1`
+## 当前验证结果
 
-## 鏂囦欢
+- 当前自动回归结果：`keff = 1.099876`
+- 与参考值的绝对误差：`0.000124`
+- `tools/run_validation.py` 中当前容差：`1.0e-1`
 
-- 杈撳叆锛歔reflective_sphere_1g.xml](/d:/Strack/validation/reflective_sphere_1g/reflective_sphere_1g.xml)
-- 鎴潰锛歔sphere_1g.xml](/d:/Strack/validation/reflective_sphere_1g/sphere_1g_mgxs.xml)
+## 这个算例主要验证什么
 
+- `sphere` 曲面几何
+- 曲面反射边界条件
+- 三维曲面射线追踪
+- `cell` 内 `source region` 细分在曲面问题中的使用
+
+## 文件
+
+- 输入：[reflective_sphere_1g.xml](/d:/Strack/validation/reflective_sphere_1g/reflective_sphere_1g.xml)
+- 截面：[sphere_1g_mgxs.xml](/d:/Strack/validation/reflective_sphere_1g/sphere_1g_mgxs.xml)

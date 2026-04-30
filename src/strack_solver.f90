@@ -104,6 +104,7 @@ contains
     results%flux = flux_old
     results%source_weights = track_acc
     results%converged_cycle = model%cycles
+    results%geometry_search = model%geometry_search
     call collapse_cell_flux(model, results)
   end subroutine solve_model
 
@@ -213,7 +214,7 @@ contains
 
     epsilon_shift = 1.0e-8_dp
     do while (alive .and. remaining > 1.0e-10_dp)
-      call nearest_surface_distance(model, point, direction, phys_distance, surface_index)
+      call nearest_surface_distance(model, cell_index, point, direction, phys_distance, surface_index)
       sub_distance = subdivision_distance(model%cells(cell_index), model%source_regions(source_region_index), point, direction)
       step = min(remaining, min(phys_distance, sub_distance))
       hit_surface = phys_distance <= sub_distance .and. phys_distance <= remaining
@@ -247,12 +248,12 @@ contains
           point = moved_point
           call reflect_direction(model%surfaces(surface_index), point, direction)
           point = point + direction * epsilon_shift
-          cell_index = locate_cell(model, point)
+          cell_index = locate_cell(model, point, surface_index)
           if (cell_index == 0 .or. model%cells(cell_index)%is_void) alive = .false.
           if (alive) source_region_index = locate_source_region(model, cell_index, point)
         else
           point = moved_point + direction * epsilon_shift
-          cell_index = locate_cell(model, point)
+          cell_index = locate_cell(model, point, surface_index)
           if (cell_index == 0 .or. model%cells(cell_index)%is_void) then
             alive = .false.
           else

@@ -1,42 +1,44 @@
-﻿# slab_1d_1g
+# slab_1d_1g
 
-## 棰樼洰鐩殑
+## 题目目的
 
-楠岃瘉鐪熺┖娉勬紡鏉′欢涓嬩竴缁村钩鏉挎湰寰佸€奸棶棰樻槸鍚﹁兘琚綋鍓嶉殢鏈哄皠绾垮師鍨嬫纭崟鎹夈€?
-## 鍙傝€冩潵婧?
-- Stepanov J. The DPn Surface Flow Integral Neutron Transport Method for Slab Geometry[J]. Nucl Sci & Eng, 1981, 78(1): 53-65.
-- 璋徊鐢? Dorning J J. 涓夌淮涓瓙杈撹繍鏂圭▼绂绘暎绾靛潗鏍囪妭鍧楁暟鍊艰В娉昜J]. 鏍哥瀛︿笌宸ョ▼, 1986, 6(4): 311-322.
+验证文献一维真空平板本征值问题在 `strack` 中的三维等效建模路径是否合理。
 
-## 妯″瀷璇存槑
+## 参考来源
 
-- 鍘熼锛氫竴缁村潎鍖€骞虫澘锛屽帤搴?`10 cm`
-- 鏈▼搴忎腑鐨勭瓑鏁堝缓妯★細
-- `x = 0` 涓?`x = 10 cm` 涓虹湡绌鸿竟鐣?- `y`銆乣z` 鏂瑰悜鍙?`[-0.5, 0.5]`锛屽苟鏂藉姞鍙嶅皠杈圭晫锛屼互绛夋晥涓€缁撮棶棰?- 鑳界兢锛? 缇?- 骞虫簮鍖猴細`80 x 1 x 1`
+- 谢仲生，Dorning J J. 三维中子输运方程离散纵坐标节块数值解法.
+- Stepanov I T. The DPn Surface Flow Integral Neutron Transport Method for Slab Geometry.
 
-## 鎴潰鍙傛暟
+## 模型说明
+
+- 几何：厚度 `10 cm` 的平板
+- 建模方式：`x` 向为真空边界，`y/z` 向为反射边界，用三维等效模型表示一维问题
+- 能群：1 群
+- 平源区：`80 x 1 x 1` 的 `source region` 细分
+
+## 截面参数
 
 - `Sigma_t = 1.0`
 - `Sigma_a = 0.08`
 - `nuSigma_f = 0.10`
-- `Sigma_s = Sigma_t - Sigma_a = 0.92`
 
-## 鍙傝€冨€?
-- 鏂囩尞鍙傝€冭В锛歚keff 鈮?0.95348`
+## 参考值
 
-## 褰撳墠绋嬪簭缁撴灉璇存槑
+- 文献参考：`keff ≈ 0.95348`
 
-- 褰撳墠 `strack` 鍘熷瀷閲囩敤闅忔満灏勭嚎 + 骞虫簮鍖烘簮杩唬
-- 璇ョ畻渚嬪湪褰撳墠閰嶇疆涓嬮€氬父寰楀埌 `keff 鈮?0.9506`
-- 鐩稿鍙傝€冭В鍋忎綆绾?`0.3%`
-- 杩欎竴鍋忓樊鍙嶆槧浜嗗綋鍓嶅師鍨嬪湪鐪熺┖娉勬紡浣撶郴涓婄殑杩戜技璇樊姘村钩锛屽悗缁彲缁х画閫氳繃鏇翠弗鏍肩殑浣撶Н褰掍竴鍖栧拰杞ㄩ亾缁熻鏀硅繘
+## 当前验证结果
 
-## 楠岃瘉鍒ゆ嵁
+- 当前自动回归结果：`keff = 0.947358`
+- 与参考值的绝对误差：`0.006122`
+- `tools/run_validation.py` 中当前容差：`1.0e-2`
 
-- 褰撳墠 `tools/run_validation.py` 涓噰鐢ㄥ弬鑰冨€?`0.95348`
-- 瀹瑰樊璁句负 `1.0e-2`
+## 这个算例主要验证什么
 
-## 鏂囦欢
+- 真空边界起射策略
+- 近一维问题中的随机射线推进
+- 长细几何里的 `source region` 细分效果
 
-- 杈撳叆锛歔slab_1d_1g.xml](/d:/Strack/validation/slab_1d_1g/slab_1d_1g.xml)
-- 鎴潰锛歔slab_1g.xml](/d:/Strack/validation/slab_1d_1g/slab_1g_mgxs.xml)
+## 文件
 
+- 输入：[slab_1d_1g.xml](/d:/Strack/validation/slab_1d_1g/slab_1d_1g.xml)
+- 截面：[slab_1g_mgxs.xml](/d:/Strack/validation/slab_1d_1g/slab_1g_mgxs.xml)

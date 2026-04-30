@@ -40,6 +40,8 @@ contains
         model%case_name = trim(words(2))
       case ('RUN_MODE')
         model%run_mode = lower_string(trim(words(2)))
+      case ('GEOMETRY_SEARCH')
+        model%geometry_search = lower_string(trim(words(2)))
       case ('SPATIAL_DIMENSION')
         read(words(2), *) model%spatial_dimension
       case ('ENERGY_GROUPS')
@@ -85,8 +87,10 @@ contains
     if (model%spatial_dimension /= 2 .and. model%spatial_dimension /= 3) then
       error stop 'spatial_dimension must be 2 or 3'
     end if
+    call normalize_geometry_search(model)
 
     call resolve_materials(model)
+    call build_geometry_maps(model)
     call build_source_regions(model)
   end subroutine load_model
 
@@ -342,6 +346,65 @@ contains
       if (model%cells(i)%xs_index == 0) error stop 'cell material mapping failed'
     end do
   end subroutine resolve_materials
+
+  subroutine normalize_geometry_search(model)
+    type(model_t), intent(inout) :: model
+
+    select case (trim(model%geometry_search))
+    case ('global')
+      continue
+    case ('surface-local', 'surface_local', 'surface', 'local')
+      model%geometry_search = 'surface-local'
+    case default
+      error stop 'geometry_search must be global or surface-local'
+    end select
+  end subroutine normalize_geometry_search
+
+  subroutine build_geometry_maps(model)
+    type(model_t), intent(inout) :: model
+    logical, allocatable :: seen(:)
+    integer, allocatable :: counts(:), temp(:)
+    integer :: i, j, n, surf_index, pos
+
+    if (.not. allocated(model%surfaces)) return
+    if (.not. allocated(model%cells)) return
+
+    allocate(seen(size(model%surfaces)))
+    allocate(counts(size(model%surfaces)))
+    counts = 0
+
+    do i = 1, size(model%cells)
+      seen = .false.
+      allocate(temp(size(model%cells(i)%token_value)))
+      n = 0
+      do j = 1, size(model%cells(i)%token_type)
+        if (model%cells(i)%token_type(j) /= zone_operand) cycle
+        surf_index = abs(model%cells(i)%token_value(j))
+        if (seen(surf_index)) cycle
+        seen(surf_index) = .true.
+        n = n + 1
+        temp(n) = surf_index
+        counts(surf_index) = counts(surf_index) + 1
+      end do
+      allocate(model%cells(i)%surface_indices(n))
+      if (n > 0) model%cells(i)%surface_indices = temp(:n)
+      deallocate(temp)
+    end do
+
+    do i = 1, size(model%surfaces)
+      allocate(model%surfaces(i)%candidate_cells(counts(i)))
+    end do
+
+    counts = 0
+    do i = 1, size(model%cells)
+      do j = 1, size(model%cells(i)%surface_indices)
+        surf_index = model%cells(i)%surface_indices(j)
+        counts(surf_index) = counts(surf_index) + 1
+        pos = counts(surf_index)
+        model%surfaces(surf_index)%candidate_cells(pos) = i
+      end do
+    end do
+  end subroutine build_geometry_maps
 
   subroutine build_source_regions(model)
     type(model_t), intent(inout) :: model

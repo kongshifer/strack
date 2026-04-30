@@ -1,30 +1,36 @@
-﻿# homogeneous_square_2g
+# homogeneous_square_2g
 
-## 棰樼洰鐩殑
+## 题目目的
 
-楠岃瘉涓ょ兢鏁ｅ皠銆侀檷缇ゅ拰瑁傚彉鑰﹀悎鏄惁姝ｇ‘锛屼互鍙婂缇ゆ湰寰佸€兼洿鏂版槸鍚﹁兘鏀舵暃鍒拌В鏋愮煩闃电壒寰佸€笺€?
-## 妯″瀷璇存槑
+验证二维等效、双群、全反射均匀体系中的多群散射与裂变耦合是否正常。
 
-- 鍑犱綍锛歚[-1, 1] x [-1, 1] x [-0.5, 0.5]`
-- 杈圭晫锛氬叚闈㈠叏鍙嶅皠
-- 鐗╃悊涓婂彲瑙嗕綔浜岀淮鍧囧寑闂鐨勪笁缁寸瓑鏁堣〃绀?- 鑳界兢锛? 缇?- 骞虫簮鍖猴細`8 x 8 x 1`
+## 模型说明
 
-## 鎴潰鍙傛暟
+- 几何：`x-y` 平面上的正方形 `[-1, 1] x [-1, 1]`
+- 二维等效处理：`z` 向厚度为 `1.0`，并采用反射边界
+- 边界：四周全反射
+- 能群：2 群
+- 平源区：`8 x 8 x 1` 的 `source region` 细分
 
-- `Sigma_t = [0.22, 0.80]`
-- `nuSigma_f = [0.14, 0.12]`
-- `chi = [1.0, 0.0]`
-- `Sigma_s = [[0.08, 0.09], [0.00, 0.50]]`
+## 参考值
 
-## 鍙傝€冨€?
-- 鍙傝€冨€煎彇涓ょ兢鍧囧寑浣撶郴鏈緛鐭╅樀涓荤壒寰佸€?- 褰撳墠鑴氭湰璁＄畻鐨勫弬鑰?`keff = 1.257143`
+- 这个算例的参考值来自当前输入截面对应的均匀本征问题
+- 当前验证参考：`keff = 1.257143`
 
-## 楠岃瘉鍒ゆ嵁
+## 当前验证结果
 
-- 褰撳墠 `tools/run_validation.py` 涓噰鐢ㄥ宸?`1.0e-1`
+- 当前自动回归结果：`keff = 1.257143`
+- 与参考值的绝对误差：`0.000000`
+- `tools/run_validation.py` 中当前容差：`1.0e-1`
 
-## 鏂囦欢
+## 这个算例主要验证什么
 
-- 杈撳叆锛歔homogeneous_square_2g.xml](/d:/Strack/validation/homogeneous_square_2g/homogeneous_square_2g.xml)
-- 鎴潰锛歔homogeneous_2g.xml](/d:/Strack/validation/homogeneous_square_2g/homogeneous_2g_mgxs.xml)
+- `2D` 模式是否工作正常
+- 双群散射与裂变源耦合
+- 均匀体系下的二维随机射线推进
+- `cell` 内 `source region` 细分在二维问题中的行为
 
+## 文件
+
+- 输入：[homogeneous_square_2g.xml](/d:/Strack/validation/homogeneous_square_2g/homogeneous_square_2g.xml)
+- 截面：[homogeneous_2g_mgxs.xml](/d:/Strack/validation/homogeneous_square_2g/homogeneous_2g_mgxs.xml)

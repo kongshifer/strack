@@ -13,6 +13,7 @@ module strack_types
     character(len=str_len) :: surface_type = ''
     character(len=str_len) :: boundary = 'transmission'
     real(dp), allocatable :: coeffs(:)
+    integer, allocatable :: candidate_cells(:)
   end type surface_t
 
   type, public :: xs_t
@@ -45,6 +46,7 @@ module strack_types
     real(dp) :: upper_right(3) = 0.0_dp
     integer :: source_start = 0
     integer :: source_count = 0
+    integer, allocatable :: surface_indices(:)
   end type cell_t
 
   type, public :: source_region_t
@@ -69,6 +71,7 @@ module strack_types
     character(len=path_len) :: output_prefix = ''
     character(len=path_len) :: case_name = ''
     character(len=str_len) :: run_mode = 'criticality'
+    character(len=str_len) :: geometry_search = 'global'
     integer :: spatial_dimension = 3
     integer :: ngroups = 0
     integer :: cycles = 0
@@ -94,6 +97,7 @@ module strack_types
     real(dp), allocatable :: source_weights(:)
     real(dp), allocatable :: cell_flux(:,:)
     integer :: converged_cycle = 0
+    character(len=str_len) :: geometry_search = 'global'
   end type results_t
 
 end module strack_types

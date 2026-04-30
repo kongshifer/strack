@@ -1,4 +1,4 @@
-<input>
+﻿<input>
   <geometry>
     <surface id="xmin" type="x-plane" coeffs="0.0" boundary="vacuum" />
     <surface id="xmax" type="x-plane" coeffs="10.0" boundary="vacuum" />
@@ -12,7 +12,7 @@
     <cell id="outside" material="void" zone="-xmin|xmax|-ymin|ymax|-zmin|zmax" />
   </geometry>
   <materials>
-    <library type="strack-mg" path="../mgxs/slab_1g.xml" />
+    <library type="strack-mg" path="slab_1g_mgxs.xml" />
     <material id="fuel" xs="fuel" />
   </materials>
   <options>
@@ -29,3 +29,4 @@
     </ray_source>
   </options>
 </input>
+

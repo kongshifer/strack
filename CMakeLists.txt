@@ -6,6 +6,10 @@ set(CMAKE_Fortran_STANDARD 2003)
 set(CMAKE_Fortran_STANDARD_REQUIRED ON)
 set(CMAKE_Fortran_EXTENSIONS OFF)
 
+if(NOT CMAKE_CONFIGURATION_TYPES AND NOT CMAKE_BUILD_TYPE)
+  set(CMAKE_BUILD_TYPE Release CACHE STRING "Build type" FORCE)
+endif()
+
 option(STRACK_ENABLE_MPI "Enable MPI support when an MPI Fortran toolchain is available" ON)
 
 find_package(Python3 COMPONENTS Interpreter REQUIRED)

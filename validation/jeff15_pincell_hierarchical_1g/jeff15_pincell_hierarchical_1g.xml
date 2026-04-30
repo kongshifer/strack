@@ -1,4 +1,4 @@
-<input>
+﻿<input>
   <geometry>
     <surface id="xmin" type="x-plane" coeffs="-0.63" boundary="reflect" />
     <surface id="xmax" type="x-plane" coeffs="0.63" boundary="reflect" />
@@ -22,7 +22,7 @@
   </geometry>
 
   <materials>
-    <library type="strack-mg" path="../mgxs/jeff15_lwr_1g.xml" />
+    <library type="strack-mg" path="jeff15_lwr_1g_mgxs.xml" />
     <material id="fuel30" xs="fuel30" />
     <material id="fuel07" xs="fuel07" />
     <material id="clad" xs="clad" />
@@ -45,3 +45,4 @@
   </options>
 
 </input>
+

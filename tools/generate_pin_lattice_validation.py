@@ -4,8 +4,7 @@ from pathlib import Path
 
 
 REPO = Path(__file__).resolve().parent.parent
-CASES = REPO / "validation" / "cases"
-MGXS = REPO / "validation" / "mgxs"
+VALIDATION = REPO / "validation"
 
 PITCH = 1.26
 HALF_PITCH = 0.63
@@ -29,7 +28,12 @@ PIN_TYPES = {
 
 
 def write_text(path: Path, text: str) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(text.strip() + "\n", encoding="utf-8")
+
+
+def case_dir(name: str) -> Path:
+    return VALIDATION / name
 
 
 def mgxs_xml() -> str:
@@ -92,7 +96,7 @@ def options_xml(cycle: int, particles: int, x_half: float, y_half: float) -> str
 def materials_xml() -> str:
     return """
   <materials>
-    <library type="strack-mg" path="../mgxs/jeff15_lwr_1g.xml" />
+    <library type="strack-mg" path="jeff15_lwr_1g_mgxs.xml" />
     <material id="fuel30" xs="fuel30" />
     <material id="fuel07" xs="fuel07" />
     <material id="clad" xs="clad" />
@@ -244,11 +248,17 @@ def explicit_lattice_xml() -> str:
 
 
 def main() -> int:
-    write_text(MGXS / "jeff15_lwr_1g.xml", mgxs_xml())
-    write_text(CASES / "jeff15_pincell_explicit_1g.xml", explicit_pincell_xml())
-    write_text(CASES / "jeff15_pincell_hierarchical_1g.xml", hierarchy_pincell_xml())
-    write_text(CASES / "jeff15_7x7_explicit_1g.xml", explicit_lattice_xml())
-    write_text(CASES / "jeff15_7x7_hierarchical_1g.xml", hierarchy_lattice_xml())
+    for name in [
+        "jeff15_pincell_explicit_1g",
+        "jeff15_pincell_hierarchical_1g",
+        "jeff15_7x7_explicit_1g",
+        "jeff15_7x7_hierarchical_1g",
+    ]:
+        write_text(case_dir(name) / "jeff15_lwr_1g_mgxs.xml", mgxs_xml())
+    write_text(case_dir("jeff15_pincell_explicit_1g") / "jeff15_pincell_explicit_1g.xml", explicit_pincell_xml())
+    write_text(case_dir("jeff15_pincell_hierarchical_1g") / "jeff15_pincell_hierarchical_1g.xml", hierarchy_pincell_xml())
+    write_text(case_dir("jeff15_7x7_explicit_1g") / "jeff15_7x7_explicit_1g.xml", explicit_lattice_xml())
+    write_text(case_dir("jeff15_7x7_hierarchical_1g") / "jeff15_7x7_hierarchical_1g.xml", hierarchy_lattice_xml())
     return 0
 
 

@@ -1,4 +1,4 @@
-<input>
+﻿<input>
   <geometry>
     <surface id="s1" type="sphere" coeffs="0.0 0.0 0.0 1.0" boundary="reflect" />
     <cell id="core" material="fuel" zone="-s1">
@@ -7,7 +7,7 @@
     <cell id="outside" material="void" zone="s1" />
   </geometry>
   <materials>
-    <library type="strack-mg" path="../mgxs/sphere_1g.xml" />
+    <library type="strack-mg" path="sphere_1g_mgxs.xml" />
     <material id="fuel" xs="fuel" />
   </materials>
   <options>
@@ -24,3 +24,4 @@
     </ray_source>
   </options>
 </input>
+

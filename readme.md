@@ -14,4 +14,5 @@
 - `*.out` 与 `*_results.py` 输出
 - `validation/` 下的首批验证算例与说明文档
 
-基础使用见 [docs/user/usage.md](/d:/Strack/docs/user/usage.md)，MPI/并行补充说明见 [docs/user/usage_mpi.md](/d:/Strack/docs/user/usage_mpi.md)，开发说明见 [docs/developer/architecture.md](/d:/Strack/docs/developer/architecture.md)。
+一键构建脚本见 [build_scripts](/d:/Strack/build_scripts)。
+跨平台构建与运行见 [docs/user/build_run.md](/d:/Strack/docs/user/build_run.md)，MPI/并行补充说明见 [docs/user/usage_mpi.md](/d:/Strack/docs/user/usage_mpi.md)，开发说明见 [docs/developer/architecture.md](/d:/Strack/docs/developer/architecture.md)。

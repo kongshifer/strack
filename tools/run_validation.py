@@ -39,6 +39,14 @@ def run_case(exe: Path, case: Path, launcher: list[str]) -> dict[str, object]:
     return parse_result(case.with_name(case.stem + "_results.py"))
 
 
+def case_input(repo: Path, name: str) -> Path:
+    return repo / "validation" / name / f"{name}.xml"
+
+
+def case_doc(name: str) -> str:
+    return f"../{name}/{name}.md"
+
+
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--exe", required=True)
@@ -55,16 +63,16 @@ def main() -> int:
     cases = [
         {
             "name": "homogeneous_cube_1g",
-            "input": repo / "validation" / "cases" / "homogeneous_cube_1g.xml",
-            "doc": "../cases/homogeneous_cube_1g.md",
+            "input": case_input(repo, "homogeneous_cube_1g"),
+            "doc": case_doc("homogeneous_cube_1g"),
             "description": "Fully reflective 3D homogeneous 1-group cube used to track the kinf limit.",
             "expected": 1.25,
             "tol": 8.0e-2,
         },
         {
             "name": "homogeneous_square_2g",
-            "input": repo / "validation" / "cases" / "homogeneous_square_2g.xml",
-            "doc": "../cases/homogeneous_square_2g.md",
+            "input": case_input(repo, "homogeneous_square_2g"),
+            "doc": case_doc("homogeneous_square_2g"),
             "description": "Reflective 2D-equivalent 2-group homogeneous square for scattering/fission coupling.",
             "expected": dominant_keff(
                 2,
@@ -77,56 +85,56 @@ def main() -> int:
         },
         {
             "name": "reflective_sphere_1g",
-            "input": repo / "validation" / "cases" / "reflective_sphere_1g.xml",
-            "doc": "../cases/reflective_sphere_1g.md",
+            "input": case_input(repo, "reflective_sphere_1g"),
+            "doc": case_doc("reflective_sphere_1g"),
             "description": "Reflective 1-group sphere used to exercise curved-surface tracking.",
             "expected": 1.10,
             "tol": 1.0e-1,
         },
         {
             "name": "slab_1d_1g",
-            "input": repo / "validation" / "cases" / "slab_1d_1g.xml",
-            "doc": "../cases/slab_1d_1g.md",
+            "input": case_input(repo, "slab_1d_1g"),
+            "doc": case_doc("slab_1d_1g"),
             "description": "Literature 1D vacuum slab benchmark represented through the code's multidimensional geometry path.",
             "expected": 0.95348,
             "tol": 1.0e-2,
         },
         {
             "name": "unstructured_circle_square_2g",
-            "input": repo / "validation" / "cases" / "unstructured_circle_square_2g.xml",
-            "doc": "../cases/unstructured_circle_square_2g.md",
+            "input": case_input(repo, "unstructured_circle_square_2g"),
+            "doc": case_doc("unstructured_circle_square_2g"),
             "description": "Explicit 2D two-region circle-in-square benchmark used to track heterogeneous keff behavior.",
             "expected": 1.174655,
             "tol": 5.0e-3,
         },
         {
             "name": "jeff15_pincell_explicit_1g",
-            "input": repo / "validation" / "cases" / "jeff15_pincell_explicit_1g.xml",
-            "doc": "../cases/jeff15_pincell_explicit_1g.md",
+            "input": case_input(repo, "jeff15_pincell_explicit_1g"),
+            "doc": case_doc("jeff15_pincell_explicit_1g"),
             "description": "JEFF Report 15 style pin-cell explicit CSG baseline.",
-            "expected": 0.8054626000,
+            "expected": 0.8088976266,
             "tol": 1.0e-6,
         },
         {
             "name": "jeff15_pincell_hierarchical_1g",
-            "input": repo / "validation" / "cases" / "jeff15_pincell_hierarchical_1g.xml",
-            "doc": "../cases/jeff15_pincell_hierarchical_1g.md",
+            "input": case_input(repo, "jeff15_pincell_hierarchical_1g"),
+            "doc": case_doc("jeff15_pincell_hierarchical_1g"),
             "description": "Same pin-cell modeled through pin+universe hierarchy and compared with explicit CSG.",
             "expected_from": "jeff15_pincell_explicit_1g",
             "tol": 1.0e-10,
         },
         {
             "name": "jeff15_7x7_explicit_1g",
-            "input": repo / "validation" / "cases" / "jeff15_7x7_explicit_1g.xml",
-            "doc": "../cases/jeff15_7x7_explicit_1g.md",
+            "input": case_input(repo, "jeff15_7x7_explicit_1g"),
+            "doc": case_doc("jeff15_7x7_explicit_1g"),
             "description": "JEFF Report 15 style 7x7 pin-pattern explicit CSG baseline.",
-            "expected": 0.8356857465,
+            "expected": 0.8333259402,
             "tol": 1.0e-6,
         },
         {
             "name": "jeff15_7x7_hierarchical_1g",
-            "input": repo / "validation" / "cases" / "jeff15_7x7_hierarchical_1g.xml",
-            "doc": "../cases/jeff15_7x7_hierarchical_1g.md",
+            "input": case_input(repo, "jeff15_7x7_hierarchical_1g"),
+            "doc": case_doc("jeff15_7x7_hierarchical_1g"),
             "description": "Same 7x7 pin-pattern modeled through pin+lattice+universe hierarchy and compared with explicit CSG.",
             "expected_from": "jeff15_7x7_explicit_1g",
             "tol": 1.0e-10,

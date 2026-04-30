@@ -1,0 +1,34 @@
+<mgxs groups="1">
+  <material id="fuel30">
+    <total>0.78</total>
+    <nu_sigma_f>0.22</nu_sigma_f>
+    <chi>1.0</chi>
+    <scatter>
+      <row>0.58</row>
+    </scatter>
+  </material>
+  <material id="fuel07">
+    <total>0.78</total>
+    <nu_sigma_f>0.18</nu_sigma_f>
+    <chi>1.0</chi>
+    <scatter>
+      <row>0.58</row>
+    </scatter>
+  </material>
+  <material id="clad">
+    <total>0.55</total>
+    <nu_sigma_f>0.0</nu_sigma_f>
+    <chi>1.0</chi>
+    <scatter>
+      <row>0.50</row>
+    </scatter>
+  </material>
+  <material id="water">
+    <total>1.20</total>
+    <nu_sigma_f>0.0</nu_sigma_f>
+    <chi>1.0</chi>
+    <scatter>
+      <row>1.14</row>
+    </scatter>
+  </material>
+</mgxs>

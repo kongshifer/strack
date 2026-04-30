@@ -1,4 +1,4 @@
-<input>
+﻿<input>
   <geometry>
     <surface id="xmin" type="x-plane" coeffs="-1.0" boundary="reflect" />
     <surface id="xmax" type="x-plane" coeffs="1.0" boundary="reflect" />
@@ -12,7 +12,7 @@
     <cell id="outside" material="void" zone="-xmin|xmax|-ymin|ymax|-zmin|zmax" />
   </geometry>
   <materials>
-    <library type="strack-mg" path="../mgxs/homogeneous_2g.xml" />
+    <library type="strack-mg" path="homogeneous_2g_mgxs.xml" />
     <material id="fuel" xs="fuel" />
   </materials>
   <options>
@@ -29,3 +29,4 @@
     </ray_source>
   </options>
 </input>
+

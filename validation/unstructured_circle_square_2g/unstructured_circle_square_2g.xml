@@ -1,4 +1,4 @@
-<input>
+﻿<input>
   <geometry>
     <surface id="xmin" type="x-plane" coeffs="-1.5" boundary="reflect" />
     <surface id="xmax" type="x-plane" coeffs="1.5" boundary="reflect" />
@@ -24,7 +24,7 @@
   </geometry>
 
   <materials>
-    <library type="strack-mg" path="../mgxs/unstructured_circle_square_2g.xml" />
+    <library type="strack-mg" path="unstructured_circle_square_2g_mgxs.xml" />
     <material id="fuel" xs="fuel" />
     <material id="moderator" xs="moderator" />
   </materials>
@@ -44,3 +44,4 @@
     </ray_source>
   </options>
 </input>
+

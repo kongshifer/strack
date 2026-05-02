@@ -7,7 +7,7 @@
     <surface id="zmin" type="z-plane" coeffs="-0.5" boundary="reflect" />
     <surface id="zmax" type="z-plane" coeffs="0.5" boundary="reflect" />
     <cell id="slab" material="fuel" zone="xmin -xmax ymin -ymax zmin -zmax">
-      <source_regions dimension="80 1 1" lower_left="0.0 -0.5 -0.5" upper_right="10.0 0.5 0.5" />
+      <source_regions dimension="160 1 1" lower_left="0.0 -0.5 -0.5" upper_right="10.0 0.5 0.5" />
     </cell>
     <cell id="outside" material="void" zone="-xmin|xmax|-ymin|ymax|-zmin|zmax" />
   </geometry>
@@ -17,9 +17,9 @@
   </materials>
   <options>
     <run_mode>criticality</run_mode>
-    <cycle>60</cycle>
-    <inactive>20</inactive>
-    <particles>1800</particles>
+    <cycle>120</cycle>
+    <inactive>40</inactive>
+    <particles>6000</particles>
     <distance_inactive>0.0</distance_inactive>
     <distance_active>250.0</distance_active>
     <seed>13579</seed>

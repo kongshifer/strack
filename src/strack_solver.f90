@@ -194,6 +194,12 @@ contains
       remaining = model%distance_active
       tallying = .true.
       call advance_ray(model, source, point, direction, cell_index, source_region_index, psi, remaining, tallying, alive, delta_acc, track_acc)
+      if (alive .and. launched_from_vacuum) then
+        ! For open systems, do not truncate a vacuum-launched characteristic
+        ! before it naturally leaks out of the geometry.
+        remaining = huge(1.0_dp) / 100.0_dp
+        call advance_ray(model, source, point, direction, cell_index, source_region_index, psi, remaining, tallying, alive, delta_acc, track_acc)
+      end if
     end if
   end subroutine sweep_random_ray
 

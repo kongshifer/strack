@@ -97,7 +97,7 @@ def main() -> int:
             "doc": case_doc("slab_1d_1g"),
             "description": "Literature 1D vacuum slab benchmark represented through the code's multidimensional geometry path.",
             "expected": 0.95348,
-            "tol": 1.0e-2,
+            "tol": 1.0e-3,
         },
         {
             "name": "unstructured_circle_square_2g",

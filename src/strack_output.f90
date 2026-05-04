@@ -429,7 +429,7 @@ contains
 
     select case (trim(model%ray_launch_mode))
     case ('volume')
-      source_sampling_mode = 'volume uniform isotropic (forced)'
+      source_sampling_mode = 'volume uniform isotropic + vacuum-reset (forced)'
     case ('vacuum-surface')
       if (vacuum_surface_launch_available(model)) then
         source_sampling_mode = 'vacuum-surface cosine (forced)'

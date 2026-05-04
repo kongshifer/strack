@@ -112,7 +112,7 @@ def main() -> int:
             "input": case_input(repo, "jeff15_pincell_explicit_1g"),
             "doc": case_doc("jeff15_pincell_explicit_1g"),
             "description": "JEFF Report 15 style pin-cell explicit CSG baseline.",
-            "expected": 0.8088976266,
+            "expected": 0.8058181237,
             "tol": 1.0e-6,
         },
         {
@@ -128,7 +128,7 @@ def main() -> int:
             "input": case_input(repo, "jeff15_7x7_explicit_1g"),
             "doc": case_doc("jeff15_7x7_explicit_1g"),
             "description": "JEFF Report 15 style 7x7 pin-pattern explicit CSG baseline.",
-            "expected": 0.8333259402,
+            "expected": 0.8327631112,
             "tol": 1.0e-6,
         },
         {

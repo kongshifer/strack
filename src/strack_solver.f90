@@ -340,7 +340,7 @@ contains
     real(dp) :: point(3), direction(3), psi(model%ngroups)
     integer :: source_region_index, cell_index, g
     real(dp) :: remaining
-    logical :: alive, tallying, launched_from_vacuum
+    logical :: alive, tallying, launched_from_vacuum, continue_after_vacuum
 
     call sample_ray_start(model, seed, point, direction, cell_index, source_region_index, launched_from_vacuum)
     if (launched_from_vacuum) then
@@ -350,24 +350,29 @@ contains
         psi(g) = source(source_region_index, g) / max(model%xs(model%source_regions(source_region_index)%xs_index)%sigma_t(g), tiny_value)
       end do
     end if
+    continue_after_vacuum = .not. launched_from_vacuum
 
     remaining = model%distance_inactive
     tallying = .false.
     alive = .true.
-    call advance_ray(model, source, point, direction, cell_index, source_region_index, psi, remaining, tallying, alive, delta_acc, track_acc, counters)
+    call advance_ray(model, source, point, direction, cell_index, source_region_index, psi, remaining, tallying, &
+      continue_after_vacuum, alive, delta_acc, track_acc, counters)
 
     if (alive) then
       remaining = model%distance_active
       tallying = .true.
-      call advance_ray(model, source, point, direction, cell_index, source_region_index, psi, remaining, tallying, alive, delta_acc, track_acc, counters)
+      call advance_ray(model, source, point, direction, cell_index, source_region_index, psi, remaining, tallying, &
+        continue_after_vacuum, alive, delta_acc, track_acc, counters)
       if (alive .and. launched_from_vacuum) then
         remaining = huge(1.0_dp) / 100.0_dp
-        call advance_ray(model, source, point, direction, cell_index, source_region_index, psi, remaining, tallying, alive, delta_acc, track_acc, counters)
+        call advance_ray(model, source, point, direction, cell_index, source_region_index, psi, remaining, tallying, &
+          continue_after_vacuum, alive, delta_acc, track_acc, counters)
       end if
     end if
   end subroutine sweep_random_ray
 
-  subroutine advance_ray(model, source, point, direction, cell_index, source_region_index, psi, remaining, tallying, alive, delta_acc, track_acc, counters)
+  subroutine advance_ray(model, source, point, direction, cell_index, source_region_index, psi, remaining, tallying, &
+    continue_after_vacuum, alive, delta_acc, track_acc, counters)
     type(model_t), intent(in) :: model
     real(dp), intent(in) :: source(:,:)
     real(dp), intent(inout) :: point(3), direction(3)
@@ -375,6 +380,7 @@ contains
     real(dp), intent(inout) :: psi(:)
     real(dp), intent(inout) :: remaining
     logical, intent(in) :: tallying
+    logical, intent(in) :: continue_after_vacuum
     logical, intent(inout) :: alive
     real(dp), intent(inout) :: delta_acc(:,:), track_acc(:)
     integer(int64), intent(inout) :: counters(3)
@@ -430,7 +436,20 @@ contains
           point = moved_point + direction * epsilon_shift
           cell_index = locate_cell(model, point, surface_index)
           if (cell_index == 0 .or. model%cells(cell_index)%is_void) then
-            alive = .false.
+            if (continue_after_vacuum) then
+              point = moved_point
+              call reflect_direction(model%surfaces(surface_index), point, direction)
+              psi = 0.0_dp
+              point = point + direction * epsilon_shift
+              cell_index = locate_cell(model, point, surface_index)
+              if (cell_index == 0 .or. model%cells(cell_index)%is_void) then
+                alive = .false.
+              else
+                source_region_index = locate_source_region(model, cell_index, point)
+              end if
+            else
+              alive = .false.
+            end if
           else
             source_region_index = locate_source_region(model, cell_index, point)
           end if

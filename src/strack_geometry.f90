@@ -1,4 +1,5 @@
 module strack_geometry
+  use iso_fortran_env, only: int64
   use strack_kinds, only: dp, pi, tiny_value, str_len
   use strack_runtime, only: runtime_fail
   use strack_string, only: lower_string
@@ -405,11 +406,14 @@ contains
   real(dp) function uniform(seed, low, high)
     integer, intent(inout) :: seed
     real(dp), intent(in) :: low, high
-    integer, parameter :: modulus = 2147483647, multiplier = 48271
+    integer(int64), parameter :: modulus = 2147483647_int64
+    integer(int64), parameter :: multiplier = 48271_int64
+    integer(int64) :: state
 
-    seed = mod(multiplier * seed, modulus)
-    if (seed <= 0) seed = seed + modulus
-    uniform = low + (high - low) * real(seed, dp) / real(modulus, dp)
+    state = mod(multiplier * int(seed, int64), modulus)
+    if (state <= 0_int64) state = state + modulus
+    seed = int(state)
+    uniform = low + (high - low) * real(state, dp) / real(modulus, dp)
   end function uniform
 
   logical function launch_from_vacuum_face(model, seed, point, direction, cell_index, source_region_index)

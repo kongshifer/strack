@@ -1,5 +1,6 @@
 module strack_geometry
   use strack_kinds, only: dp, pi, tiny_value, str_len
+  use strack_runtime, only: runtime_fail
   use strack_string, only: lower_string
   use strack_types
   implicit none
@@ -9,6 +10,7 @@ module strack_geometry
   public :: locate_source_region
   public :: random_point_in_geometry
   public :: sample_ray_start
+  public :: vacuum_surface_launch_available
   public :: nearest_surface_distance
   public :: subdivision_distance
   public :: reflect_direction
@@ -132,7 +134,7 @@ contains
       source_region_index = locate_source_region(model, cell_index, point)
       return
     end do
-    error stop 'failed to sample a point in geometry'
+    call runtime_fail('failed to sample a point in geometry after 200000 trials; check the ray_source box and geometry overlap', 2)
   end subroutine random_point_in_geometry
 
   subroutine sample_direction(model, seed, direction)
@@ -160,14 +162,30 @@ contains
     integer, intent(out) :: cell_index
     integer, intent(out) :: source_region_index
     logical, intent(out) :: launched_from_vacuum
-    logical :: has_vacuum_faces
+    logical :: launched
 
-    has_vacuum_faces = launch_from_vacuum_face(model, seed, point, direction, cell_index, source_region_index)
-    launched_from_vacuum = has_vacuum_faces
-    if (.not. has_vacuum_faces) then
+    select case (trim(model%ray_launch_mode))
+    case ('volume')
       call random_point_in_geometry(model, seed, point, cell_index, source_region_index)
       call sample_direction(model, seed, direction)
-    end if
+      launched_from_vacuum = .false.
+    case ('vacuum-surface')
+      if (.not. vacuum_surface_launch_available(model)) then
+        call runtime_fail("ray_launch_mode='vacuum-surface' requires at least one vacuum x/y/z-plane coincident with the ray_source box", 2)
+      end if
+      launched = launch_from_vacuum_face(model, seed, point, direction, cell_index, source_region_index)
+      if (.not. launched) then
+        call runtime_fail("failed to launch a vacuum-surface ray after 2000 trials; check the geometry near the launch faces or reduce boundary_epsilon_shift", 2)
+      end if
+      launched_from_vacuum = .true.
+    case default
+      launched = launch_from_vacuum_face(model, seed, point, direction, cell_index, source_region_index)
+      launched_from_vacuum = launched
+      if (.not. launched) then
+        call random_point_in_geometry(model, seed, point, cell_index, source_region_index)
+        call sample_direction(model, seed, direction)
+      end if
+    end select
   end subroutine sample_ray_start
 
   subroutine nearest_surface_distance(model, cell_index, point, direction, distance, surface_index)
@@ -264,7 +282,8 @@ contains
       surface_value = (point(1) - surface%coeffs(1))**2 + (point(2) - surface%coeffs(2))**2 + &
         (point(3) - surface%coeffs(3))**2 - surface%coeffs(4)**2
     case default
-      error stop 'unsupported surface type'
+      surface_value = 0.0_dp
+      call runtime_fail('unsupported surface type in surface_value: '//trim(stype), 2)
     end select
   end function surface_value
 
@@ -306,7 +325,7 @@ contains
           (point(3) - surface%coeffs(3))**2 - surface%coeffs(4)**2
       surface_distance = smallest_positive_root(a, b, c)
     case default
-      error stop 'unsupported surface type'
+      call runtime_fail('unsupported surface type in surface_distance: '//trim(stype), 2)
     end select
 
     if (surface_distance <= 1.0e-10_dp) surface_distance = huge(1.0_dp)
@@ -335,7 +354,8 @@ contains
     case ('sphere')
       normal = [point(1) - surface%coeffs(1), point(2) - surface%coeffs(2), point(3) - surface%coeffs(3)]
     case default
-      error stop 'unsupported surface type'
+      normal = 0.0_dp
+      call runtime_fail('unsupported surface type in surface_normal: '//trim(stype), 2)
     end select
   end function surface_normal
 
@@ -408,7 +428,7 @@ contains
     launch_from_vacuum_face = .false.
     active_face = .false.
     face_measure = 0.0_dp
-    eps = 1.0e-8_dp
+    eps = model%boundary_epsilon_shift
     midplane_z = 0.5_dp * (model%ray_lower_left(3) + model%ray_upper_right(3))
 
     do i = 1, size(model%surfaces)
@@ -472,6 +492,19 @@ contains
       return
     end do
   end function launch_from_vacuum_face
+
+  logical function vacuum_surface_launch_available(model)
+    type(model_t), intent(in) :: model
+    logical :: active_face(6)
+    integer :: i
+
+    active_face = .false.
+    do i = 1, size(model%surfaces)
+      call flag_vacuum_face(model, model%surfaces(i), active_face)
+    end do
+    if (model%spatial_dimension == 2) active_face(5:6) = .false.
+    vacuum_surface_launch_available = any(active_face)
+  end function vacuum_surface_launch_available
 
   subroutine flag_vacuum_face(model, surface, active_face)
     type(model_t), intent(in) :: model

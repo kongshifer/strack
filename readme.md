@@ -15,4 +15,4 @@
 - `validation/` 下的首批验证算例与说明文档
 
 一键构建脚本见 [build_scripts](/d:/Strack/build_scripts)。
-跨平台构建与运行见 [docs/user/build_run.md](/d:/Strack/docs/user/build_run.md)，射线抽样与边界处理说明见 [docs/user/ray_sampling_and_boundaries.md](/d:/Strack/docs/user/ray_sampling_and_boundaries.md)，真空面起射的详细推导见 [docs/user/vacuum_surface_sampling.md](/d:/Strack/docs/user/vacuum_surface_sampling.md)，MPI/并行补充说明见 [docs/user/usage_mpi.md](/d:/Strack/docs/user/usage_mpi.md)，开发说明见 [docs/developer/architecture.md](/d:/Strack/docs/developer/architecture.md)。
+跨平台构建与运行见 [docs/user/build_run.md](/d:/Strack/docs/user/build_run.md)，输出与报错说明见 [docs/user/output_reporting.md](/d:/Strack/docs/user/output_reporting.md)，射线抽样与边界处理说明见 [docs/user/ray_sampling_and_boundaries.md](/d:/Strack/docs/user/ray_sampling_and_boundaries.md)，真空面起射的详细推导见 [docs/user/vacuum_surface_sampling.md](/d:/Strack/docs/user/vacuum_surface_sampling.md)，MPI/并行补充说明见 [docs/user/usage_mpi.md](/d:/Strack/docs/user/usage_mpi.md)，开发说明见 [docs/developer/architecture.md](/d:/Strack/docs/developer/architecture.md)。

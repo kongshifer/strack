@@ -222,3 +222,30 @@ epsilon_shift = 1.0e-8
 - 起点与方向抽样：[src/strack_geometry.f90](/d:/Strack/src/strack_geometry.f90)
 - 射线推进与边界穿越：[src/strack_solver.f90](/d:/Strack/src/strack_solver.f90)
 - 输入边界字符串归一化：[tools/pack_input.py](/d:/Strack/tools/pack_input.py)
+
+## 当前可选控制项
+
+现在程序不再只靠自动判断，也支持用户在输入卡里显式指定：
+
+```xml
+<ray_launch_mode>auto</ray_launch_mode>
+<boundary_epsilon_shift>1.0e-8</boundary_epsilon_shift>
+```
+
+- `ray_launch_mode=auto`
+  - 有可用真空平面外边界时走真空面起射
+  - 否则退回体内随机起射
+- `ray_launch_mode=volume`
+  - 始终体内随机起射
+- `ray_launch_mode=vacuum-surface`
+  - 始终要求真空面起射
+  - 如果几何里没有与 `ray_source` 盒子重合的 `x/y/z-plane` 真空外边界，程序会直接报错
+- `boundary_epsilon_shift`
+  - 控制射线穿面、反射后或穿过细分面后的人为前推距离
+  - 默认值仍为 `1.0e-8`
+  - 当前版本里不建议把它压到 `1e-10` 量级或更小，因为这已经接近内部几何判定容差，可能引发边界附近的数值抖动
+
+因此，当前程序里“采用哪种起射方式”有两层判断：
+
+1. 用户有没有用 `ray_launch_mode` 强制指定
+2. 如果设为 `auto`，才再检查当前几何是否具备真空面起射条件

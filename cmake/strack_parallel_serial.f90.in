@@ -1,4 +1,5 @@
 module strack_parallel
+  use iso_fortran_env, only: int64
   use strack_kinds, only: dp
   implicit none
   private
@@ -13,6 +14,7 @@ module strack_parallel
   public :: parallel_distribute_count
   public :: parallel_sum_real_vector
   public :: parallel_sum_real_matrix
+  public :: parallel_sum_int64_vector
 
 contains
 
@@ -71,5 +73,9 @@ contains
   subroutine parallel_sum_real_matrix(values)
     real(dp), intent(inout) :: values(:,:)
   end subroutine parallel_sum_real_matrix
+
+  subroutine parallel_sum_int64_vector(values)
+    integer(int64), intent(inout) :: values(:)
+  end subroutine parallel_sum_int64_vector
 
 end module strack_parallel

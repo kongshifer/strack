@@ -2,7 +2,9 @@ module strack_solver
   use iso_fortran_env, only: int64
   use strack_kinds, only: dp, tiny_value
   use strack_geometry
-  use strack_parallel, only: parallel_distribute_count, parallel_is_root, parallel_size, parallel_sum_real_matrix, parallel_sum_real_vector
+  use strack_parallel, only: parallel_distribute_count, parallel_is_root, parallel_size, parallel_sum_int64_vector, &
+    parallel_sum_real_matrix, parallel_sum_real_vector
+  use strack_runtime, only: runtime_log_message, wall_time_seconds
   use strack_types
   implicit none
   private
@@ -13,51 +15,103 @@ contains
 
   subroutine solve_model(model, results, log_unit)
     type(model_t), intent(in) :: model
-    type(results_t), intent(out) :: results
+    type(results_t), intent(inout) :: results
     integer, intent(in) :: log_unit
-    integer :: nsr, ng, cycle, serial_seed, ray_seed, i, g, ray
-    integer :: local_begin, local_end, local_count
+    integer :: nsr, ng, cycle, serial_seed, ray_seed, i, g, ray, ncell
+    integer :: local_begin, local_end, local_count, active_count
     real(dp), allocatable :: flux_old(:,:), flux_new(:,:), source(:,:), delta(:,:), track(:), track_acc(:)
     real(dp), allocatable :: fixed_external(:,:), fiss_old(:), fiss_new(:)
+    real(dp), allocatable :: flux_sum(:,:), flux_sumsq(:,:), cell_flux_cycle(:,:), cell_flux_sum(:,:), cell_flux_sumsq(:,:)
     real(dp) :: keff, new_keff, flux_change, f_old, f_new
+    real(dp) :: keff_sum, keff_sumsq, t_solve_start, t_cycle_start, t_cycle_end, t_phase_start
+    real(dp) :: tracked_time, sample_mean
+    integer(int64) :: local_counters(4), cycle_counters(3)
 
     nsr = size(model%source_regions)
     ng = model%ngroups
+    ncell = size(model%cells)
     serial_seed = model%seed
 
     allocate(flux_old(nsr, ng), flux_new(nsr, ng), source(nsr, ng), delta(nsr, ng), track(nsr), track_acc(nsr))
     allocate(fixed_external(nsr, ng), fiss_old(nsr), fiss_new(nsr))
+    allocate(flux_sum(nsr, ng), flux_sumsq(nsr, ng))
+    allocate(cell_flux_cycle(ncell, ng), cell_flux_sum(ncell, ng), cell_flux_sumsq(ncell, ng))
     allocate(results%keff_history(model%cycles))
-    allocate(results%flux(nsr, ng))
+    allocate(results%flux(nsr, ng), results%flux_mean(nsr, ng), results%flux_variance(nsr, ng), results%flux_stddev(nsr, ng), &
+      results%flux_stderr(nsr, ng))
     allocate(results%source_weights(nsr))
-    allocate(results%cell_flux(size(model%cells), ng))
+    allocate(results%cell_flux(ncell, ng), results%cell_flux_mean(ncell, ng), results%cell_flux_variance(ncell, ng), &
+      results%cell_flux_stddev(ncell, ng), results%cell_flux_stderr(ncell, ng))
 
     flux_old = 1.0_dp
     flux_new = 1.0_dp
     track_acc = 0.0_dp
     fixed_external = 0.0_dp
+    flux_sum = 0.0_dp
+    flux_sumsq = 0.0_dp
+    cell_flux_sum = 0.0_dp
+    cell_flux_sumsq = 0.0_dp
+    results%keff_history = 0.0_dp
+    results%flux = 0.0_dp
+    results%flux_mean = 0.0_dp
+    results%flux_variance = 0.0_dp
+    results%flux_stddev = 0.0_dp
+    results%flux_stderr = 0.0_dp
+    results%source_weights = 0.0_dp
+    results%cell_flux = 0.0_dp
+    results%cell_flux_mean = 0.0_dp
+    results%cell_flux_variance = 0.0_dp
+    results%cell_flux_stddev = 0.0_dp
+    results%cell_flux_stderr = 0.0_dp
+    results%timing%simulation_total = 0.0_dp
+    results%timing%transport_sweep = 0.0_dp
+    results%timing%source_update = 0.0_dp
+    results%timing%tally_conversion = 0.0_dp
+    results%timing%mpi_source_reductions = 0.0_dp
+    results%timing%other_iteration = 0.0_dp
+    results%timing%inactive_cycles = 0.0_dp
+    results%timing%active_cycles = 0.0_dp
+    results%counters = counters_t()
     keff = 1.0_dp
+    keff_sum = 0.0_dp
+    keff_sumsq = 0.0_dp
+    active_count = 0
+    local_counters = 0_int64
     call build_fixed_external(model, fixed_external)
 
+    t_solve_start = wall_time_seconds()
     do cycle = 1, model%cycles
+      t_cycle_start = wall_time_seconds()
+
+      t_phase_start = wall_time_seconds()
       call build_source(model, flux_old, fixed_external, keff, source)
+      results%timing%source_update = results%timing%source_update + max(wall_time_seconds() - t_phase_start, 0.0_dp)
+
       delta = 0.0_dp
       track = 0.0_dp
+      cycle_counters = 0_int64
       call parallel_distribute_count(model%particles, local_begin, local_end, local_count)
+      local_counters(1) = local_counters(1) + int(local_count, int64)
 
+      t_phase_start = wall_time_seconds()
       do ray = local_begin, local_end
         if (parallel_size() > 1) then
           ray_seed = history_seed(model%seed, cycle, ray)
         else
           ray_seed = serial_seed
         end if
-        call sweep_random_ray(model, source, delta, track, ray_seed)
+        call sweep_random_ray(model, source, delta, track, ray_seed, cycle_counters)
         if (parallel_size() == 1) serial_seed = ray_seed
       end do
+      results%timing%transport_sweep = results%timing%transport_sweep + max(wall_time_seconds() - t_phase_start, 0.0_dp)
+      local_counters(2:4) = local_counters(2:4) + cycle_counters
 
+      t_phase_start = wall_time_seconds()
       call parallel_sum_real_matrix(delta)
       call parallel_sum_real_vector(track)
+      results%timing%mpi_source_reductions = results%timing%mpi_source_reductions + max(wall_time_seconds() - t_phase_start, 0.0_dp)
 
+      t_phase_start = wall_time_seconds()
       do i = 1, nsr
         do g = 1, ng
           if (track(i) > tiny_value) then
@@ -82,31 +136,143 @@ contains
         f_new = f_new + max(track(i), 1.0_dp) * fiss_new(i)
       end do
 
-      if (cycle > model%inactive) track_acc = track_acc + track
-
       if (trim(model%run_mode) == 'criticality' .and. f_old > tiny_value .and. f_new > tiny_value) then
         new_keff = keff * f_new / f_old
       else
         new_keff = 1.0_dp
       end if
 
+      if (cycle > model%inactive) then
+        active_count = active_count + 1
+        track_acc = track_acc + track
+        keff_sum = keff_sum + new_keff
+        keff_sumsq = keff_sumsq + new_keff * new_keff
+        flux_sum = flux_sum + flux_new
+        flux_sumsq = flux_sumsq + flux_new * flux_new
+        call collapse_cell_flux_from_state(model, flux_new, track, cell_flux_cycle)
+        cell_flux_sum = cell_flux_sum + cell_flux_cycle
+        cell_flux_sumsq = cell_flux_sumsq + cell_flux_cycle * cell_flux_cycle
+      end if
+      results%timing%tally_conversion = results%timing%tally_conversion + max(wall_time_seconds() - t_phase_start, 0.0_dp)
+
       flux_change = maxval(abs(flux_new - flux_old) / max(abs(flux_old), 1.0e-10_dp))
       results%keff_history(cycle) = new_keff
-      if (parallel_is_root() .and. log_unit > 0) then
-        write(log_unit, '(A,I5,A,I8,2(A,F14.7))') 'cycle ', cycle, '  rays=', model%particles, '  keff=', new_keff, '  max_dphi=', flux_change
+      if (parallel_is_root()) then
+        call emit_cycle_progress(cycle, model, new_keff, flux_change, active_count, keff_sum, keff_sumsq)
       end if
 
       flux_old = flux_new
       keff = new_keff
+      t_cycle_end = wall_time_seconds()
+      if (cycle > model%inactive) then
+        results%timing%active_cycles = results%timing%active_cycles + max(t_cycle_end - t_cycle_start, 0.0_dp)
+      else
+        results%timing%inactive_cycles = results%timing%inactive_cycles + max(t_cycle_end - t_cycle_start, 0.0_dp)
+      end if
     end do
 
+    t_phase_start = wall_time_seconds()
+    call parallel_sum_int64_vector(local_counters)
+    results%timing%mpi_source_reductions = results%timing%mpi_source_reductions + max(wall_time_seconds() - t_phase_start, 0.0_dp)
+
+    results%timing%simulation_total = max(wall_time_seconds() - t_solve_start, 0.0_dp)
+    tracked_time = results%timing%source_update + results%timing%transport_sweep + results%timing%tally_conversion + &
+      results%timing%mpi_source_reductions
+    results%timing%other_iteration = max(results%timing%simulation_total - tracked_time, 0.0_dp)
+
     results%keff = keff
+    results%n_active_cycles = active_count
     results%flux = flux_old
     results%source_weights = track_acc
     results%converged_cycle = model%cycles
     results%geometry_search = model%geometry_search
+    results%counters%total_histories = local_counters(1)
+    results%counters%total_segment_integrations = local_counters(2)
+    results%counters%total_surface_intersections = local_counters(3)
+    results%counters%total_subdivision_crossings = local_counters(4)
+
     call collapse_cell_flux(model, results)
+
+    if (active_count > 0) then
+      results%keff_mean = keff_sum / real(active_count, dp)
+      sample_mean = results%keff_mean
+      if (active_count > 1) then
+        results%keff_variance = max((keff_sumsq - real(active_count, dp) * sample_mean * sample_mean) / &
+          real(active_count - 1, dp), 0.0_dp)
+      else
+        results%keff_variance = 0.0_dp
+      end if
+      results%keff_stddev = sqrt(results%keff_variance)
+      results%keff_stderr = results%keff_stddev / sqrt(real(active_count, dp))
+
+      results%flux_mean = flux_sum / real(active_count, dp)
+      results%flux_variance = 0.0_dp
+      if (active_count > 1) then
+        results%flux_variance = max((flux_sumsq - real(active_count, dp) * results%flux_mean * results%flux_mean) / &
+          real(active_count - 1, dp), 0.0_dp)
+      end if
+      results%flux_stddev = sqrt(results%flux_variance)
+      results%flux_stderr = results%flux_stddev / sqrt(real(active_count, dp))
+
+      results%cell_flux_mean = cell_flux_sum / real(active_count, dp)
+      results%cell_flux_variance = 0.0_dp
+      if (active_count > 1) then
+        results%cell_flux_variance = max((cell_flux_sumsq - real(active_count, dp) * results%cell_flux_mean * results%cell_flux_mean) / &
+          real(active_count - 1, dp), 0.0_dp)
+      end if
+      results%cell_flux_stddev = sqrt(results%cell_flux_variance)
+      results%cell_flux_stderr = results%cell_flux_stddev / sqrt(real(active_count, dp))
+    else
+      results%keff_mean = results%keff
+      results%keff_variance = 0.0_dp
+      results%keff_stddev = 0.0_dp
+      results%keff_stderr = 0.0_dp
+      results%flux_mean = results%flux
+      results%flux_variance = 0.0_dp
+      results%flux_stddev = 0.0_dp
+      results%flux_stderr = 0.0_dp
+      results%cell_flux_mean = results%cell_flux
+      results%cell_flux_variance = 0.0_dp
+      results%cell_flux_stddev = 0.0_dp
+      results%cell_flux_stderr = 0.0_dp
+    end if
   end subroutine solve_model
+
+  subroutine emit_cycle_progress(cycle, model, keff_value, flux_change, active_count, keff_sum, keff_sumsq)
+    integer, intent(in) :: cycle, active_count
+    type(model_t), intent(in) :: model
+    real(dp), intent(in) :: keff_value, flux_change, keff_sum, keff_sumsq
+    character(len=256) :: line
+    character(len=32) :: cycle_text, stage_text, keff_text, mean_text, stderr_text, dphi_text, active_text
+    real(dp) :: running_variance, running_mean, running_stderr
+
+    write(cycle_text, '(I0,A,I0)') cycle, '/', model%cycles
+    write(keff_text, '(F8.5)') keff_value
+    write(dphi_text, '(ES10.2)') flux_change
+
+    if (cycle <= model%inactive) then
+      stage_text = '[inactive]'
+      line = trim(cycle_text)//' '//trim(stage_text)//' keff='//trim(adjustl(keff_text))// &
+        ' max_dphi='//trim(adjustl(dphi_text))
+    else
+      running_mean = keff_sum / real(max(active_count, 1), dp)
+      if (active_count > 1) then
+        running_variance = max((keff_sumsq - real(active_count, dp) * running_mean * running_mean) / &
+          real(active_count - 1, dp), 0.0_dp)
+      else
+        running_variance = 0.0_dp
+      end if
+      running_stderr = sqrt(running_variance / real(max(active_count, 1), dp))
+      write(active_text, '(I0)') active_count
+      write(mean_text, '(F8.5)') running_mean
+      write(stderr_text, '(ES10.2)') running_stderr
+      stage_text = '[active '//trim(active_text)//']'
+      line = trim(cycle_text)//' '//trim(stage_text)//' keff='//trim(adjustl(keff_text))// &
+        ' mean='//trim(adjustl(mean_text))//' stderr='//trim(adjustl(stderr_text))// &
+        ' max_dphi='//trim(adjustl(dphi_text))
+    end if
+    call runtime_log_message(trim(line), .true.)
+  end subroutine emit_cycle_progress
 
   integer function history_seed(base_seed, cycle, ray)
     integer, intent(in) :: base_seed, cycle, ray
@@ -165,15 +331,15 @@ contains
     end do
   end subroutine build_source
 
-  subroutine sweep_random_ray(model, source, delta_acc, track_acc, seed)
+  subroutine sweep_random_ray(model, source, delta_acc, track_acc, seed, counters)
     type(model_t), intent(in) :: model
     real(dp), intent(in) :: source(:,:)
     real(dp), intent(inout) :: delta_acc(:,:), track_acc(:)
     integer, intent(inout) :: seed
+    integer(int64), intent(inout) :: counters(3)
     real(dp) :: point(3), direction(3), psi(model%ngroups)
-    real(dp) :: remaining, segment_length, phys_distance, sub_distance
-    real(dp) :: delta, src_over_sig
-    integer :: cell_index, source_region_index, surface_index, g
+    integer :: source_region_index, cell_index, g
+    real(dp) :: remaining
     logical :: alive, tallying, launched_from_vacuum
 
     call sample_ray_start(model, seed, point, direction, cell_index, source_region_index, launched_from_vacuum)
@@ -188,22 +354,20 @@ contains
     remaining = model%distance_inactive
     tallying = .false.
     alive = .true.
-    call advance_ray(model, source, point, direction, cell_index, source_region_index, psi, remaining, tallying, alive, delta_acc, track_acc)
+    call advance_ray(model, source, point, direction, cell_index, source_region_index, psi, remaining, tallying, alive, delta_acc, track_acc, counters)
 
     if (alive) then
       remaining = model%distance_active
       tallying = .true.
-      call advance_ray(model, source, point, direction, cell_index, source_region_index, psi, remaining, tallying, alive, delta_acc, track_acc)
+      call advance_ray(model, source, point, direction, cell_index, source_region_index, psi, remaining, tallying, alive, delta_acc, track_acc, counters)
       if (alive .and. launched_from_vacuum) then
-        ! For open systems, do not truncate a vacuum-launched characteristic
-        ! before it naturally leaks out of the geometry.
         remaining = huge(1.0_dp) / 100.0_dp
-        call advance_ray(model, source, point, direction, cell_index, source_region_index, psi, remaining, tallying, alive, delta_acc, track_acc)
+        call advance_ray(model, source, point, direction, cell_index, source_region_index, psi, remaining, tallying, alive, delta_acc, track_acc, counters)
       end if
     end if
   end subroutine sweep_random_ray
 
-  subroutine advance_ray(model, source, point, direction, cell_index, source_region_index, psi, remaining, tallying, alive, delta_acc, track_acc)
+  subroutine advance_ray(model, source, point, direction, cell_index, source_region_index, psi, remaining, tallying, alive, delta_acc, track_acc, counters)
     type(model_t), intent(in) :: model
     real(dp), intent(in) :: source(:,:)
     real(dp), intent(inout) :: point(3), direction(3)
@@ -213,12 +377,13 @@ contains
     logical, intent(in) :: tallying
     logical, intent(inout) :: alive
     real(dp), intent(inout) :: delta_acc(:,:), track_acc(:)
+    integer(int64), intent(inout) :: counters(3)
     real(dp) :: phys_distance, sub_distance, step, moved_point(3), epsilon_shift
     integer :: surface_index, g, xs_index
     logical :: hit_surface, hit_subdivision
     real(dp) :: sigma_t, delta, src_over_sig
 
-    epsilon_shift = 1.0e-8_dp
+    epsilon_shift = model%boundary_epsilon_shift
     do while (alive .and. remaining > 1.0e-10_dp)
       call nearest_surface_distance(model, cell_index, point, direction, phys_distance, surface_index)
       sub_distance = subdivision_distance(model%cells(cell_index), model%source_regions(source_region_index), point, direction)
@@ -231,6 +396,10 @@ contains
         alive = .false.
         exit
       end if
+
+      counters(1) = counters(1) + 1_int64
+      if (hit_surface) counters(2) = counters(2) + 1_int64
+      if (hit_subdivision) counters(3) = counters(3) + 1_int64
 
       xs_index = model%source_regions(source_region_index)%xs_index
       do g = 1, model%ngroups
@@ -275,24 +444,31 @@ contains
   subroutine collapse_cell_flux(model, results)
     type(model_t), intent(in) :: model
     type(results_t), intent(inout) :: results
+
+    call collapse_cell_flux_from_state(model, results%flux, results%source_weights, results%cell_flux)
+  end subroutine collapse_cell_flux
+
+  subroutine collapse_cell_flux_from_state(model, flux, weights, cell_flux)
+    type(model_t), intent(in) :: model
+    real(dp), intent(in) :: flux(:,:), weights(:)
+    real(dp), intent(out) :: cell_flux(:,:)
     integer :: cell_index, sr, g, start_idx, end_idx
     real(dp) :: weight_sum
 
-    results%cell_flux = 0.0_dp
+    cell_flux = 0.0_dp
     do cell_index = 1, size(model%cells)
       if (model%cells(cell_index)%is_void) cycle
       start_idx = model%cells(cell_index)%source_start
       end_idx = start_idx + model%cells(cell_index)%source_count - 1
-      weight_sum = sum(results%source_weights(start_idx:end_idx))
+      weight_sum = sum(weights(start_idx:end_idx))
       if (weight_sum <= tiny_value) weight_sum = real(model%cells(cell_index)%source_count, dp)
       do sr = start_idx, end_idx
         do g = 1, model%ngroups
-          results%cell_flux(cell_index, g) = results%cell_flux(cell_index, g) + &
-            max(results%source_weights(sr), 1.0_dp) * results%flux(sr, g)
+          cell_flux(cell_index, g) = cell_flux(cell_index, g) + max(weights(sr), 1.0_dp) * flux(sr, g)
         end do
       end do
-      results%cell_flux(cell_index, :) = results%cell_flux(cell_index, :) / max(weight_sum, tiny_value)
+      cell_flux(cell_index, :) = cell_flux(cell_index, :) / max(weight_sum, tiny_value)
     end do
-  end subroutine collapse_cell_flux
+  end subroutine collapse_cell_flux_from_state
 
 end module strack_solver

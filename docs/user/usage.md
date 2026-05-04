@@ -209,3 +209,34 @@ print(r.cell_flux["core"])
 
 - 验证题入口见 [validation/README.md](/d:/Strack/validation/README.md)
 - 每个算例都在 `validation/cases/` 下配有同名 Markdown 说明
+
+## 新增起射与边界微移选项
+
+`options` 里现在可以显式控制射线起射模式和边界后的微小位移量：
+
+```xml
+<options>
+  ...
+  <ray_launch_mode>auto</ray_launch_mode>
+  <boundary_epsilon_shift>1.0e-8</boundary_epsilon_shift>
+  ...
+</options>
+```
+
+说明如下：
+
+- `ray_launch_mode`
+  - `auto`：默认值。如果 `ray_source` 盒子外侧存在与之重合的 `x/y/z-plane` 真空面，则采用真空面起射；否则退回体内随机起射。
+  - `volume`：强制体内随机起射，不再自动切换到真空面起射。
+  - `vacuum-surface`：强制真空面起射。如果当前几何里没有可用的真空平面外边界，程序会直接报错并停止。
+- `boundary_epsilon_shift`
+  - 默认值是 `1.0e-8`。
+  - 射线穿过几何边界、反射边界或 `source region` 细分面之后，程序会沿新方向人为前推这一小段距离，避免数值上卡在边界面上。
+  - 这个量必须非负。取太大可能带来额外几何误差，取太小甚至取 `0` 则可能导致边界重复命中或定位失败。
+  - 当前版本里不建议把它压到 `1e-10` 量级或更小；对 `slab_1d_1g` 这类真空泄漏题，这样做会明显扭曲 `keff`。
+
+推荐用法：
+
+- 一般问题先用 `auto`。
+- 想和 OpenMC 风格的体内起射做对照时，用 `volume`。
+- 真空泄漏主导题、并且你希望严格测试真空面起射策略时，用 `vacuum-surface`。

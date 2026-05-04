@@ -69,6 +69,7 @@ set(STRACK_SOURCES
   ${CMAKE_CURRENT_BINARY_DIR}/generated/strack_parallel.f90
   src/strack_kinds.f90
   src/strack_string.f90
+  src/strack_runtime.f90
   src/strack_types.f90
   src/strack_input.f90
   src/strack_geometry.f90

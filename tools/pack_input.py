@@ -100,6 +100,32 @@ def ints_from_text(text: str) -> list[int]:
     return [int(item) for item in text.replace(",", " ").split()]
 
 
+def parse_int(text: str, context: str) -> int:
+    try:
+        return int(text)
+    except ValueError as exc:
+        raise ValueError(f"{context} must be an integer, got '{text}'") from exc
+
+
+def parse_float(text: str, context: str) -> float:
+    try:
+        return float(text)
+    except ValueError as exc:
+        raise ValueError(f"{context} must be a real number, got '{text}'") from exc
+
+
+def parse_int_list(text: str, context: str) -> list[int]:
+    if not text:
+        return []
+    return [parse_int(item, context) for item in text.replace(",", " ").split()]
+
+
+def parse_float_list(text: str, context: str) -> list[float]:
+    if not text:
+        return []
+    return [parse_float(item, context) for item in text.replace(",", " ").split()]
+
+
 def normalize_surface_type(value: str) -> str:
     value = value.strip().lower()
     return ALIASES.get(value, value)
@@ -108,6 +134,48 @@ def normalize_surface_type(value: str) -> str:
 def normalize_boundary(value: str) -> str:
     value = (value or "transmission").strip().lower()
     return ALIASES.get(value, value)
+
+
+def normalize_ray_launch_mode(value: str) -> str:
+    mode = (value or "auto").strip().lower()
+    aliases = {
+        "auto": "auto",
+        "volume": "volume",
+        "internal": "volume",
+        "body": "volume",
+        "body-internal": "volume",
+        "body_internal": "volume",
+        "vacuum-surface": "vacuum-surface",
+        "vacuum_surface": "vacuum-surface",
+        "vacuumsurface": "vacuum-surface",
+        "surface": "vacuum-surface",
+        "vacuum-face": "vacuum-surface",
+        "vacuum_face": "vacuum-surface",
+    }
+    if mode not in aliases:
+        raise ValueError("option <ray_launch_mode> must be auto, volume, or vacuum-surface")
+    return aliases[mode]
+
+
+def require_attr(node: ET.Element, name: str, context: str) -> str:
+    value = node.attrib.get(name)
+    if value is None or not value.strip():
+        raise ValueError(f"{context} is missing required attribute '{name}'")
+    return value.strip()
+
+
+def ensure_supported_boundary(boundary: str, context: str) -> str:
+    if boundary not in {"reflect", "vacuum", "transmission"}:
+        raise ValueError(f"{context} uses unsupported boundary '{boundary}'")
+    return boundary
+
+
+def echo_error(message: str, echo_out: Path | None) -> None:
+    print(message, file=sys.stderr)
+    if echo_out is not None:
+        echo_out.parent.mkdir(parents=True, exist_ok=True)
+        with echo_out.open("a", encoding="utf-8") as handle:
+            handle.write(message + "\n")
 
 
 def tokenize_zone(expr: str) -> list[str]:
@@ -206,7 +274,7 @@ def read_library(library_path: Path) -> tuple[int, dict[str, dict[str, list[floa
     root = tree.getroot()
     if root.tag.lower() != "mgxs":
         raise ValueError("MGXS library root must be <mgxs>")
-    groups = int(root.attrib["groups"])
+    groups = parse_int(root.attrib["groups"], "mgxs attribute 'groups'")
     materials: dict[str, dict[str, list[float]]] = {}
     for material in root.findall("material"):
         mid = material.attrib["id"].strip()
@@ -231,20 +299,23 @@ def parse_source_regions(cell: ET.Element) -> SourceRegionsDef | None:
     source_regions = cell.find("source_regions")
     if source_regions is None:
         return None
-    dims = ints_from_text(source_regions.attrib.get("dimension", source_regions.attrib.get("dimensions", "")))
+    dims = parse_int_list(
+        source_regions.attrib.get("dimension", source_regions.attrib.get("dimensions", "")),
+        f"cell '{cell.attrib['id']}' source_regions dimension",
+    )
     if len(dims) == 2:
         dims = [dims[0], dims[1], 1]
     if len(dims) != 3:
         raise ValueError(f"cell '{cell.attrib['id']}' subdivision must define 3 dimensions")
-    lower_left = floats_from_text(attr_or_text(source_regions, "lower_left"))
-    upper_right = floats_from_text(attr_or_text(source_regions, "upper_right"))
+    lower_left = parse_float_list(attr_or_text(source_regions, "lower_left"), f"cell '{cell.attrib['id']}' source_regions lower_left")
+    upper_right = parse_float_list(attr_or_text(source_regions, "upper_right"), f"cell '{cell.attrib['id']}' source_regions upper_right")
     if len(lower_left) != 3 or len(upper_right) != 3:
         raise ValueError(f"cell '{cell.attrib['id']}' subdivision must define lower_left and upper_right")
     return SourceRegionsDef(dims=dims, lower_left=lower_left, upper_right=upper_right)
 
 
 def parse_translation(cell: ET.Element) -> tuple[float, float, float]:
-    values = floats_from_text(cell.attrib.get("translation", ""))
+    values = parse_float_list(cell.attrib.get("translation", ""), f"cell '{cell.attrib['id']}' translation")
     if not values:
         return (0.0, 0.0, 0.0)
     if len(values) != 3:
@@ -260,19 +331,20 @@ def parse_geometry_defs(geometry: ET.Element) -> tuple[
 ]:
     surfaces: dict[str, SurfaceDef] = {}
     for node in geometry.findall("surface"):
-        sid = node.attrib["id"].strip()
+        sid = require_attr(node, "id", "<surface>")
+        boundary = ensure_supported_boundary(normalize_boundary(node.attrib.get("boundary", "transmission")), f"surface '{sid}'")
         surfaces[sid] = SurfaceDef(
             id=sid,
-            surface_type=normalize_surface_type(node.attrib["type"]),
-            boundary=normalize_boundary(node.attrib.get("boundary", "transmission")),
+            surface_type=normalize_surface_type(require_attr(node, "type", f"surface '{sid}'")),
+            boundary=boundary,
             coeffs=floats_from_text(node.attrib.get("coeffs", "")),
         )
 
     pins: dict[str, PinDef] = {}
     for node in geometry.findall("pin"):
-        pid = node.attrib["id"].strip()
+        pid = require_attr(node, "id", "<pin>")
         materials = text_of(node.find("materials")).split()
-        radii = floats_from_text(text_of(node.find("radii")))
+        radii = parse_float_list(text_of(node.find("radii")), f"pin '{pid}' radii")
         axis = normalize_surface_type(node.attrib.get("axis", "z-cylinder"))
         if axis not in {"x-cylinder", "y-cylinder", "z-cylinder"}:
             raise ValueError(f"pin '{pid}' only supports x/y/z-cylinder axis definitions")
@@ -282,11 +354,11 @@ def parse_geometry_defs(geometry: ET.Element) -> tuple[
 
     lattices: dict[str, LatticeDef] = {}
     for node in geometry.findall("lattice"):
-        lid = node.attrib["id"].strip()
+        lid = require_attr(node, "id", "<lattice>")
         lattice_type = node.attrib.get("type", "").strip().lower()
-        pitch = floats_from_text(text_of(node.find("pitch")))
-        dims = ints_from_text(text_of(node.find("dimensions")))
-        lower_left = floats_from_text(text_of(node.find("lower_left")))
+        pitch = parse_float_list(text_of(node.find("pitch")), f"lattice '{lid}' pitch")
+        dims = parse_int_list(text_of(node.find("dimensions")), f"lattice '{lid}' dimensions")
+        lower_left = parse_float_list(text_of(node.find("lower_left")), f"lattice '{lid}' lower_left")
         universes = text_of(node.find("universes")).split()
         if lattice_type != "rectangular":
             raise ValueError(f"lattice '{lid}' currently only supports rectangular type")
@@ -309,7 +381,7 @@ def parse_geometry_defs(geometry: ET.Element) -> tuple[
 
     cells_by_universe: dict[str, list[CellDef]] = {}
     for node in geometry.findall("cell"):
-        cid = node.attrib["id"].strip()
+        cid = require_attr(node, "id", "<cell>")
         universe = node.attrib.get("universe", ROOT_UNIVERSE).strip() or ROOT_UNIVERSE
         material_id = node.attrib.get("material")
         if material_id is not None:
@@ -319,7 +391,7 @@ def parse_geometry_defs(geometry: ET.Element) -> tuple[
             fill = fill.strip()
         if fill and material_id and material_id.lower() != "void":
             raise ValueError(f"cell '{cid}' should not define both material and fill in this version")
-        zone = node.attrib["zone"].strip()
+        zone = require_attr(node, "zone", f"cell '{cid}'")
         cell = CellDef(
             id=cid,
             universe=universe,
@@ -604,32 +676,51 @@ def pack(input_xml: Path, output_path: Path) -> None:
     library_type = library_node.attrib.get("type", "").strip().lower()
     if library_type not in {"strack-mg", "strack-mgxs"}:
         raise ValueError("only strack-mg libraries are supported in the current version")
-    library_path = (input_xml.parent / library_node.attrib["path"]).resolve()
+    library_path = (input_xml.parent / require_attr(library_node, "path", "<library>")).resolve()
     ngroups, library = read_library(library_path)
 
     run_mode = text_of(options.find("run_mode"), "criticality").lower()
     geometry_search = text_of(options.find("geometry_search"), "global").lower()
-    spatial_dimension = int(text_of(options.find("spatial_dimension"), "3"))
-    cycle = int(text_of(options.find("cycle"), "50"))
-    inactive = int(text_of(options.find("inactive"), "10"))
-    particles = int(text_of(options.find("particles"), "1000"))
-    distance_inactive = float(text_of(options.find("distance_inactive"), "10.0"))
-    distance_active = float(text_of(options.find("distance_active"), "80.0"))
-    seed = int(text_of(options.find("seed"), "13579"))
+    ray_launch_mode = normalize_ray_launch_mode(text_of(options.find("ray_launch_mode"), "auto"))
+    spatial_dimension = parse_int(text_of(options.find("spatial_dimension"), "3"), "option <spatial_dimension>")
+    cycle = parse_int(text_of(options.find("cycle"), "50"), "option <cycle>")
+    inactive = parse_int(text_of(options.find("inactive"), "10"), "option <inactive>")
+    particles = parse_int(text_of(options.find("particles"), "1000"), "option <particles>")
+    distance_inactive = parse_float(text_of(options.find("distance_inactive"), "10.0"), "option <distance_inactive>")
+    distance_active = parse_float(text_of(options.find("distance_active"), "80.0"), "option <distance_active>")
+    boundary_epsilon_shift = parse_float(
+        text_of(options.find("boundary_epsilon_shift"), "1.0e-8"),
+        "option <boundary_epsilon_shift>",
+    )
+    seed = parse_int(text_of(options.find("seed"), "13579"), "option <seed>")
     if seed % 2 == 0:
         seed += 1
+    if spatial_dimension not in {2, 3}:
+        raise ValueError("spatial_dimension must be 2 or 3")
+    if cycle <= 0:
+        raise ValueError("cycle must be positive")
+    if inactive < 0 or inactive >= cycle:
+        raise ValueError("inactive must satisfy 0 <= inactive < cycle")
+    if particles <= 0:
+        raise ValueError("particles must be positive")
+    if distance_inactive < 0.0 or distance_active < 0.0:
+        raise ValueError("distance_inactive and distance_active must be non-negative")
+    if boundary_epsilon_shift < 0.0:
+        raise ValueError("boundary_epsilon_shift must be non-negative")
 
     ray_source = options.find("ray_source")
     if ray_source is None:
         raise ValueError("options must define a <ray_source> block")
-    lower_left = floats_from_text(attr_or_text(ray_source, "lower_left"))
-    upper_right = floats_from_text(attr_or_text(ray_source, "upper_right"))
+    lower_left = parse_float_list(attr_or_text(ray_source, "lower_left"), "ray_source lower_left")
+    upper_right = parse_float_list(attr_or_text(ray_source, "upper_right"), "ray_source upper_right")
     if len(lower_left) != 3 or len(upper_right) != 3:
         raise ValueError("ray_source lower_left and upper_right must each have 3 values")
+    if any(upper_right[i] <= lower_left[i] for i in range(3)):
+        raise ValueError("ray_source upper_right must be greater than lower_left in every coordinate")
 
     material_map: list[tuple[str, str]] = []
     for material in materials_node.findall("material"):
-        mid = material.attrib["id"].strip()
+        mid = require_attr(material, "id", "<material>")
         xs_id = material.attrib.get("xs", mid).strip()
         if mid.lower() != "void":
             if xs_id not in library:
@@ -655,13 +746,13 @@ def pack(input_xml: Path, output_path: Path) -> None:
     fixed_sources = []
     if sources_node is not None:
         for source in sources_node.findall("source"):
-            cell_id = source.attrib["cell"].strip()
+            cell_id = require_attr(source, "cell", "<source>")
             if cell_id not in cell_lookup:
                 raise KeyError(
                     f"fixed source references cell '{cell_id}', but only leaf material cells are currently supported"
                 )
-            spectrum = floats_from_text(source.attrib.get("spectrum", ""))
-            strength = float(source.attrib.get("strength", "1.0"))
+            spectrum = parse_float_list(source.attrib.get("spectrum", ""), f"fixed source '{cell_id}' spectrum")
+            strength = parse_float(source.attrib.get("strength", "1.0"), f"fixed source '{cell_id}' strength")
             if len(spectrum) != ngroups:
                 raise ValueError(f"fixed source on cell '{cell_id}' needs {ngroups} spectrum values")
             fixed_sources.append((cell_lookup[cell_id], strength, spectrum))
@@ -671,6 +762,7 @@ def pack(input_xml: Path, output_path: Path) -> None:
         handle.write(f"CASE {input_xml.stem}\n")
         handle.write(f"RUN_MODE {run_mode}\n")
         handle.write(f"GEOMETRY_SEARCH {geometry_search}\n")
+        handle.write(f"RAY_LAUNCH_MODE {ray_launch_mode}\n")
         handle.write(f"SPATIAL_DIMENSION {spatial_dimension}\n")
         handle.write(f"ENERGY_GROUPS {ngroups}\n")
         handle.write(f"CYCLE {cycle}\n")
@@ -678,6 +770,7 @@ def pack(input_xml: Path, output_path: Path) -> None:
         handle.write(f"PARTICLES {particles}\n")
         handle.write(f"DISTANCE_INACTIVE {distance_inactive:.16e}\n")
         handle.write(f"DISTANCE_ACTIVE {distance_active:.16e}\n")
+        handle.write(f"BOUNDARY_EPSILON_SHIFT {boundary_epsilon_shift:.16e}\n")
         handle.write(f"SEED {seed}\n")
         handle.write("RAY_BOX " + " ".join(f"{value:.16e}" for value in (*lower_left, *upper_right)) + "\n")
         handle.write(f"MATERIAL_COUNT {len(material_map)}\n")
@@ -721,13 +814,22 @@ def pack(input_xml: Path, output_path: Path) -> None:
 
 
 def main(argv: list[str]) -> int:
-    if len(argv) != 3:
-        print("usage: py tools/pack_input.py <input.xml> <output.stracki>", file=sys.stderr)
+    if len(argv) not in {3, 4}:
+        print("usage: py tools/pack_input.py <input.xml> <output.stracki> [echo.out]", file=sys.stderr)
         return 1
     input_xml = Path(argv[1]).resolve()
     output_path = Path(argv[2]).resolve()
-    pack(input_xml, output_path)
-    return 0
+    echo_out = Path(argv[3]).resolve() if len(argv) == 4 else None
+    try:
+        pack(input_xml, output_path)
+        return 0
+    except ET.ParseError as exc:
+        line, column = exc.position
+        echo_error(f"XML parse error in '{input_xml}': line {line}, column {column}: {exc}", echo_out)
+        return 2
+    except Exception as exc:
+        echo_error(f"Input error in '{input_xml}': {exc}", echo_out)
+        return 2
 
 
 if __name__ == "__main__":

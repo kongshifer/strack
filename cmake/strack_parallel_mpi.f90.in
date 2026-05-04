@@ -1,4 +1,5 @@
 module strack_parallel
+  use iso_fortran_env, only: int64
   use mpi
   use strack_kinds, only: dp
   implicit none
@@ -14,6 +15,7 @@ module strack_parallel
   public :: parallel_distribute_count
   public :: parallel_sum_real_vector
   public :: parallel_sum_real_matrix
+  public :: parallel_sum_int64_vector
 
   integer :: strack_rank = 0
   integer :: strack_size = 1
@@ -141,6 +143,20 @@ contains
     values = reshape(reduced_flat, shape(values))
     deallocate(local_flat, reduced_flat)
   end subroutine parallel_sum_real_matrix
+
+  subroutine parallel_sum_int64_vector(values)
+    integer(int64), intent(inout) :: values(:)
+    integer(int64), allocatable :: reduced(:)
+    integer :: ierr
+
+    if (strack_size == 1) return
+
+    allocate(reduced(size(values)))
+    call MPI_Allreduce(values, reduced, size(values), MPI_INTEGER8, MPI_SUM, MPI_COMM_WORLD, ierr)
+    call check_mpi_status(ierr, 'MPI_Allreduce(int64 vector)')
+    values = reduced
+    deallocate(reduced)
+  end subroutine parallel_sum_int64_vector
 
   subroutine check_mpi_status(ierr, context)
     integer, intent(in) :: ierr

@@ -1,4 +1,5 @@
 module strack_types
+  use iso_fortran_env, only: int64
   use strack_kinds, only: dp, str_len, path_len
   implicit none
   private
@@ -72,6 +73,7 @@ module strack_types
     character(len=path_len) :: case_name = ''
     character(len=str_len) :: run_mode = 'criticality'
     character(len=str_len) :: geometry_search = 'global'
+    character(len=str_len) :: ray_launch_mode = 'auto'
     integer :: spatial_dimension = 3
     integer :: ngroups = 0
     integer :: cycles = 0
@@ -80,6 +82,7 @@ module strack_types
     integer :: seed = 1
     real(dp) :: distance_inactive = 0.0_dp
     real(dp) :: distance_active = 0.0_dp
+    real(dp) :: boundary_epsilon_shift = 1.0e-8_dp
     real(dp) :: ray_lower_left(3) = 0.0_dp
     real(dp) :: ray_upper_right(3) = 0.0_dp
     type(material_t), allocatable :: materials(:)
@@ -90,14 +93,53 @@ module strack_types
     type(fixed_source_t), allocatable :: fixed_sources(:)
   end type model_t
 
+  type, public :: timing_t
+    real(dp) :: initialization_total = 0.0_dp
+    real(dp) :: xml_pack = 0.0_dp
+    real(dp) :: load_model = 0.0_dp
+    real(dp) :: input_echo = 0.0_dp
+    real(dp) :: simulation_total = 0.0_dp
+    real(dp) :: transport_sweep = 0.0_dp
+    real(dp) :: source_update = 0.0_dp
+    real(dp) :: tally_conversion = 0.0_dp
+    real(dp) :: mpi_source_reductions = 0.0_dp
+    real(dp) :: other_iteration = 0.0_dp
+    real(dp) :: inactive_cycles = 0.0_dp
+    real(dp) :: active_cycles = 0.0_dp
+    real(dp) :: output_write = 0.0_dp
+    real(dp) :: finalization_total = 0.0_dp
+  end type timing_t
+
+  type, public :: counters_t
+    integer(int64) :: total_histories = 0_int64
+    integer(int64) :: total_segment_integrations = 0_int64
+    integer(int64) :: total_surface_intersections = 0_int64
+    integer(int64) :: total_subdivision_crossings = 0_int64
+  end type counters_t
+
   type, public :: results_t
     real(dp) :: keff = 1.0_dp
+    real(dp) :: keff_mean = 1.0_dp
+    real(dp) :: keff_variance = 0.0_dp
+    real(dp) :: keff_stddev = 0.0_dp
+    real(dp) :: keff_stderr = 0.0_dp
+    integer :: n_active_cycles = 0
     real(dp), allocatable :: keff_history(:)
     real(dp), allocatable :: flux(:,:)
+    real(dp), allocatable :: flux_mean(:,:)
+    real(dp), allocatable :: flux_variance(:,:)
+    real(dp), allocatable :: flux_stddev(:,:)
+    real(dp), allocatable :: flux_stderr(:,:)
     real(dp), allocatable :: source_weights(:)
     real(dp), allocatable :: cell_flux(:,:)
+    real(dp), allocatable :: cell_flux_mean(:,:)
+    real(dp), allocatable :: cell_flux_variance(:,:)
+    real(dp), allocatable :: cell_flux_stddev(:,:)
+    real(dp), allocatable :: cell_flux_stderr(:,:)
     integer :: converged_cycle = 0
     character(len=str_len) :: geometry_search = 'global'
+    type(timing_t) :: timing
+    type(counters_t) :: counters
   end type results_t
 
 end module strack_types
